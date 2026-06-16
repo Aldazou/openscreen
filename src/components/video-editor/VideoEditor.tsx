@@ -1,5 +1,5 @@
 import type { Span } from "dnd-timeline";
-import { FolderOpen, Languages, Save, Video } from "lucide-react";
+import { FolderOpen, HelpCircle, Languages, Save, Video } from "lucide-react";
 import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { toast } from "sonner";
@@ -75,6 +75,7 @@ import {
 	DEFAULT_GIF_SETTINGS,
 	DEFAULT_SOURCE_DIMENSIONS,
 } from "./editorDefaults";
+import { GettingStartedGuide } from "./GettingStartedGuide";
 import PlaybackControls from "./PlaybackControls";
 import {
 	createProjectData,
@@ -2531,6 +2532,17 @@ export default function VideoEditor() {
 						<Save size={14} />
 						{ts("project.save")}
 					</button>
+					<GettingStartedGuide
+						trigger={
+							<button
+								type="button"
+								className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-white/50 hover:text-white/90 hover:bg-white/[0.08] transition-all duration-150 text-[11px] font-medium"
+							>
+								<HelpCircle size={14} />
+								How to use
+							</button>
+						}
+					/>
 				</div>
 			</div>
 

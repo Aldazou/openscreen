@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useScopedT } from "@/contexts/I18nContext";
 import { getProjectFolder, parentDirectoryOf, saveUserPreferences } from "@/lib/userPreferences";
 import { nativeBridgeClient } from "@/native";
+import { GettingStartedGuide } from "./GettingStartedGuide";
 
 interface EditorEmptyStateProps {
 	onVideoImported: (videoPath: string) => void;
@@ -201,6 +202,9 @@ export function EditorEmptyState({ onVideoImported, onProjectOpened }: EditorEmp
 					<div className="flex items-center gap-1.5 text-xs text-slate-700 mt-4">
 						<Upload className="h-3 w-3" />
 						<span>{te("emptyState.dragDropHint")}</span>
+					</div>
+					<div className="mt-2">
+						<GettingStartedGuide />
 					</div>
 				</div>
 			</div>
