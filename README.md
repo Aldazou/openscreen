@@ -23,6 +23,7 @@ Based on the original open-source OpenScreen project (now archived upstream). Th
 
 ## Core Features
 - Record a window, whole screen, or **drawn region**.
+- Pause during recording and **Mark** a moment — opens as an emphasis zoom in the editor.
 - Microphone + system audio, with remembered HUD presets (mic / system / webcam / countdown).
 - Webcam overlay with picture-in-picture, drag-to-position, mirroring, and shape options.
 - Auto or manual zooms with adjustable depth, duration, easing, and pixel-precise position; auto-zoom follows your cursor.

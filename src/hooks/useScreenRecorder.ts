@@ -75,6 +75,8 @@ type UseScreenRecorderReturn = {
 	setCursorCaptureMode: (mode: CursorCaptureMode) => void;
 	countdownSec: 0 | 3;
 	setCountdownSec: (value: 0 | 3) => void;
+	markCount: number;
+	addRecordingMark: () => Promise<boolean>;
 };
 
 type NativeWindowsRecordingHandle = {
@@ -109,6 +111,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 	const [webcamEnabled, setWebcamEnabledState] = useState(initialPrefs.recordingWebcamEnabled);
 	const [cursorCaptureMode, setCursorCaptureMode] = useState<CursorCaptureMode>("editable-overlay");
 	const [countdownSec, setCountdownSecState] = useState<0 | 3>(initialPrefs.recordingCountdownSec);
+	const [markCount, setMarkCount] = useState(0);
 
 	const setMicrophoneEnabled = useCallback((enabled: boolean) => {
 		setMicrophoneEnabledState(enabled);
@@ -157,6 +160,31 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			segmentStartedAt.current === null ? 0 : Date.now() - segmentStartedAt.current;
 		return accumulatedDurationMs.current + segmentDuration;
 	}, []);
+
+	const addRecordingMark = useCallback(async () => {
+		if (!recording || !paused) return false;
+		try {
+			const result = await window.electronAPI.addRecordingMark(getRecordingDurationMs());
+			if (!result.success) {
+				toast.error(result.error ?? "Couldn't add mark");
+				return false;
+			}
+			if (typeof result.count === "number") {
+				setMarkCount(result.count);
+			} else {
+				setMarkCount((prev) => prev + 1);
+			}
+			toast.success(
+				typeof result.count === "number" && result.count > 1
+					? `Marked (${result.count})`
+					: "Marked for emphasis",
+			);
+			return true;
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : "Couldn't add mark");
+			return false;
+		}
+	}, [getRecordingDurationMs, paused, recording]);
 
 	const selectMimeType = () => {
 		// H.264 first: hardware-accelerated, so sharp real-time output. AV1/VP9 are
@@ -912,6 +940,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			setRecording(true);
 			setPaused(false);
 			setElapsedSeconds(0);
+			setMarkCount(0);
 			return true;
 		} catch (error) {
 			console.error("Native Windows capture failed:", error);
@@ -1056,6 +1085,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			setRecording(true);
 			setPaused(false);
 			setElapsedSeconds(0);
+			setMarkCount(0);
 			return true;
 		} catch (error) {
 			console.error("Native macOS capture failed:", error);
@@ -1401,6 +1431,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			setRecording(true);
 			setPaused(false);
 			setElapsedSeconds(0);
+			setMarkCount(0);
 			window.electronAPI?.setRecordingState(true, recordingId.current, cursorCaptureMode);
 
 			const activeScreenRecorder = screenRecorder.current;
@@ -1714,5 +1745,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 		setCursorCaptureMode,
 		countdownSec,
 		setCountdownSec,
+		markCount,
+		addRecordingMark,
 	};
 }

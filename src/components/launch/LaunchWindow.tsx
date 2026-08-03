@@ -6,6 +6,7 @@ import { FaRegStopCircle } from "react-icons/fa";
 import { FaFolderOpen } from "react-icons/fa6";
 import { FiMinus, FiX } from "react-icons/fi";
 import {
+	MdBookmark,
 	MdCancel,
 	MdMic,
 	MdMicOff,
@@ -57,6 +58,7 @@ const ICON_CONFIG = {
 	stop: { icon: FaRegStopCircle, size: ICON_SIZE },
 	restart: { icon: MdRestartAlt, size: ICON_SIZE },
 	cancel: { icon: MdCancel, size: ICON_SIZE },
+	mark: { icon: MdBookmark, size: ICON_SIZE },
 	record: { icon: BsRecordCircle, size: ICON_SIZE },
 	videoFile: { icon: MdVideoFile, size: ICON_SIZE },
 	folder: { icon: FaFolderOpen, size: ICON_SIZE },
@@ -128,6 +130,8 @@ export function LaunchWindow() {
 		setCursorCaptureMode,
 		countdownSec,
 		setCountdownSec,
+		markCount,
+		addRecordingMark,
 	} = useScreenRecorder();
 
 	const showMicControls = microphoneEnabled && !recording;
@@ -905,6 +909,24 @@ export function LaunchWindow() {
 										paused ? "resume" : "pause",
 										paused ? "text-amber-400" : "text-white/60",
 									)}
+								</button>
+							</Tooltip>
+						)}
+						{paused && (
+							<Tooltip
+								content={
+									markCount > 0
+										? t("tooltips.markMomentCount", { count: String(markCount) })
+										: t("tooltips.markMoment")
+								}
+							>
+								<button
+									type="button"
+									className={hudAuxIconBtnClasses}
+									onClick={() => void addRecordingMark()}
+									data-testid="launch-mark-button"
+								>
+									{getIcon("mark", markCount > 0 ? "text-[#34B27B]" : "text-white/70")}
 								</button>
 							</Tooltip>
 						)}

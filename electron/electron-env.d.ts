@@ -64,6 +64,13 @@ interface Window {
 			available?: boolean;
 			error?: string;
 		}>;
+		addRecordingMark: (timeMs: number) => Promise<{
+			success: boolean;
+			mark?: import("../src/lib/recordingSession").RecordingMark;
+			count?: number;
+			error?: string;
+		}>;
+		clearRecordingMarks: () => Promise<{ success: boolean }>;
 		requestCameraAccess: () => Promise<{
 			success: boolean;
 			granted: boolean;

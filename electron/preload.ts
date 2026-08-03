@@ -74,6 +74,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	shareFile: (filePath: string) => {
 		return ipcRenderer.invoke("share-file", filePath);
 	},
+	addRecordingMark: (timeMs: number) => {
+		return ipcRenderer.invoke("add-recording-mark", timeMs);
+	},
+	clearRecordingMarks: () => {
+		return ipcRenderer.invoke("clear-recording-marks");
+	},
 	requestCameraAccess: () => {
 		return ipcRenderer.invoke("request-camera-access");
 	},

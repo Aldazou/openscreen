@@ -66,7 +66,7 @@ export function rotation3DPerspective(width: number, height: number): number {
  * toggling the wand off removes only these. Editing an auto zoom promotes it to
  * "manual" so it survives. Undefined is treated as "manual" for back-compat.
  */
-export type ZoomRegionSource = "auto" | "manual";
+export type ZoomRegionSource = "auto" | "manual" | "recording-mark";
 
 export interface ZoomRegion {
 	id: string;

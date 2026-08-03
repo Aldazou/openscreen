@@ -15,8 +15,20 @@ export interface ProjectMedia {
 
 export type CursorCaptureMode = "editable-overlay" | "system";
 
+/** Timed emphasis mark dropped from the recording HUD (pause → Mark). */
+export interface RecordingMark {
+	id: string;
+	timeMs: number;
+	/** Normalized focus in the capture frame (0–1). */
+	cx: number;
+	cy: number;
+	kind: "emphasis";
+}
+
 export interface RecordingSession extends ProjectMedia {
 	createdAt: number;
+	/** In-recording emphasis marks (materialized as zooms on editor open). */
+	marks?: RecordingMark[];
 }
 
 export interface RecordedVideoAssetInput {
@@ -93,6 +105,37 @@ export function normalizeCaptureCropRegion(value: unknown): CaptureCropRegion | 
 	};
 }
 
+export function normalizeRecordingMark(value: unknown): RecordingMark | undefined {
+	if (!value || typeof value !== "object") return undefined;
+	const raw = value as Partial<RecordingMark>;
+	const timeMs = typeof raw.timeMs === "number" ? raw.timeMs : NaN;
+	const cx = typeof raw.cx === "number" ? raw.cx : NaN;
+	const cy = typeof raw.cy === "number" ? raw.cy : NaN;
+	if (![timeMs, cx, cy].every((n) => Number.isFinite(n))) return undefined;
+	if (timeMs < 0) return undefined;
+	const id =
+		typeof raw.id === "string" && raw.id.trim().length > 0
+			? raw.id.trim()
+			: `mark-${Math.round(timeMs)}`;
+	return {
+		id,
+		timeMs: Math.max(0, timeMs),
+		cx: Math.max(0, Math.min(1, cx)),
+		cy: Math.max(0, Math.min(1, cy)),
+		kind: "emphasis",
+	};
+}
+
+export function normalizeRecordingMarks(value: unknown): RecordingMark[] | undefined {
+	if (!Array.isArray(value)) return undefined;
+	const marks = value
+		.map((entry) => normalizeRecordingMark(entry))
+		.filter((entry): entry is RecordingMark => Boolean(entry))
+		.sort((a, b) => a.timeMs - b.timeMs)
+		.slice(0, 64);
+	return marks.length > 0 ? marks : undefined;
+}
+
 export function normalizeRecordingSession(candidate: unknown): RecordingSession | null {
 	if (!candidate || typeof candidate !== "object") {
 		return null;
@@ -104,11 +147,14 @@ export function normalizeRecordingSession(candidate: unknown): RecordingSession 
 		return null;
 	}
 
+	const marks = normalizeRecordingMarks(raw.marks);
+
 	return {
 		...media,
 		createdAt:
 			typeof raw.createdAt === "number" && Number.isFinite(raw.createdAt)
 				? raw.createdAt
 				: Date.now(),
+		...(marks ? { marks } : {}),
 	};
 }

@@ -12,7 +12,9 @@
 		"useHorizontalTray": "Use horizontal tray",
 		"openStudio": "Open Studio",
 		"countdownOn": "Countdown: 3s (click for none)",
-		"countdownOff": "Countdown: off (click for 3s)"
+		"countdownOff": "Countdown: off (click for 3s)",
+		"markMoment": "Mark this moment (adds a zoom when you edit)",
+		"markMomentCount": "Mark this moment ({{count}} marked)"
 	},
 	"audio": {
 		"enableSystemAudio": "Enable system audio",

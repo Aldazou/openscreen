@@ -50,7 +50,8 @@ import {
 	VideoExporter,
 } from "@/lib/exporter";
 import { computeFrameStepTime } from "@/lib/frameStep";
-import type { CursorCaptureMode, ProjectMedia } from "@/lib/recordingSession";
+import { buildZoomRegionsFromRecordingMarks } from "@/lib/recordingMarks";
+import type { CursorCaptureMode, ProjectMedia, RecordingMark } from "@/lib/recordingSession";
 import { matchesShortcut } from "@/lib/shortcuts";
 import {
 	getExportFolder,
@@ -255,6 +256,8 @@ export default function VideoEditor() {
 	);
 	const [exportedFilePath, setExportedFilePath] = useState<string | null>(null);
 	const [exportShareAvailable, setExportShareAvailable] = useState(false);
+	const [pendingRecordingMarks, setPendingRecordingMarks] = useState<RecordingMark[]>([]);
+	const marksProcessedSourceRef = useRef<string | null>(null);
 	const [lastSavedSnapshot, setLastSavedSnapshot] = useState<string | null>(null);
 	const [unsavedExport, setUnsavedExport] = useState<{
 		arrayBuffer: ArrayBuffer;
@@ -595,6 +598,8 @@ export default function VideoEditor() {
 					setWebcamVideoPath(webcamSourcePath ? toFileUrl(webcamSourcePath) : null);
 					setRecordingCursorCaptureMode(session.cursorCaptureMode ?? null);
 					setCurrentProjectPath(null);
+					setPendingRecordingMarks(session.marks ?? []);
+					marksProcessedSourceRef.current = null;
 					const seededEditor = {
 						...INITIAL_EDITOR_STATE,
 						...(session.cropRegion ? { cropRegion: session.cropRegion } : {}),
@@ -1104,6 +1109,28 @@ export default function VideoEditor() {
 		[cursorTelemetry, duration, autoFocusAll],
 	);
 
+	// Materialize pause-to-mark emphasis zooms once duration is known.
+	useEffect(() => {
+		if (!cursorTelemetrySourcePath || duration <= 0 || pendingRecordingMarks.length === 0) return;
+		if (marksProcessedSourceRef.current === cursorTelemetrySourcePath) return;
+		marksProcessedSourceRef.current = cursorTelemetrySourcePath;
+		const totalMs = Math.round(duration * 1000);
+		const markRegions = buildZoomRegionsFromRecordingMarks({
+			marks: pendingRecordingMarks,
+			totalMs,
+			nextId: () => `zoom-${nextZoomIdRef.current++}`,
+		});
+		if (markRegions.length === 0) return;
+		pushState((prev) => ({
+			zoomRegions: [...markRegions, ...prev.zoomRegions],
+		}));
+		toast.success(
+			markRegions.length === 1
+				? "Added 1 emphasis zoom from recording"
+				: `Added ${markRegions.length} emphasis zooms from recording`,
+		);
+	}, [cursorTelemetrySourcePath, duration, pendingRecordingMarks, pushState]);
+
 	// Auto-suggest zooms once per fresh recording (no existing zooms, telemetry
 	// available, wand enabled). Loaded projects are marked processed elsewhere so
 	// they're never touched. The ref guard runs this once per source and survives undo.
@@ -1112,12 +1139,21 @@ export default function VideoEditor() {
 		if (!autoZoomEnabled || !cursorTelemetrySourcePath) return;
 		if (autoProcessedSourceRef.current === cursorTelemetrySourcePath) return;
 		if (cursorTelemetry.length < 2 || duration <= 0) return;
-		// Only auto-suggest for a fresh recording; don't disturb existing zooms.
-		if (zoomRegions.length > 0) {
+		// Wait for recording marks to materialize first so auto-suggest can avoid them.
+		if (
+			pendingRecordingMarks.length > 0 &&
+			marksProcessedSourceRef.current !== cursorTelemetrySourcePath
+		) {
+			return;
+		}
+		// Fresh recordings may already have pause-to-mark zooms; still suggest around them.
+		// Skip entirely once any non-mark zoom exists (manual edit or prior suggest).
+		const hasNonMarkZoom = zoomRegions.some((region) => region.source !== "recording-mark");
+		if (hasNonMarkZoom) {
 			autoProcessedSourceRef.current = cursorTelemetrySourcePath;
 			return;
 		}
-		const newRegions = buildAutoZoomRegions([]);
+		const newRegions = buildAutoZoomRegions(zoomRegions);
 		autoProcessedSourceRef.current = cursorTelemetrySourcePath;
 		if (newRegions.length === 0) return;
 		pushState((prev) => ({ zoomRegions: [...prev.zoomRegions, ...newRegions] }));
@@ -1129,6 +1165,7 @@ export default function VideoEditor() {
 		zoomRegions,
 		buildAutoZoomRegions,
 		pushState,
+		pendingRecordingMarks.length,
 	]);
 
 	// Wand toggle: ON regenerates suggestions around existing zooms; OFF removes

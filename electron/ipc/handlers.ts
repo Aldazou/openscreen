@@ -25,9 +25,12 @@ import {
 	normalizeCaptureCropRegion,
 	normalizeCursorCaptureMode,
 	normalizeProjectMedia,
+	normalizeRecordingMark,
+	normalizeRecordingMarks,
 	normalizeRecordingSession,
 	type ProjectMedia,
 	type RecordedVideoAssetInput,
+	type RecordingMark,
 	type RecordingSession,
 	type StoreRecordedSessionInput,
 } from "../../src/lib/recordingSession";
@@ -367,6 +370,8 @@ let selectedDesktopSource: DesktopCapturerSource | null = null;
 let lastEnumeratedSources = new Map<string, DesktopCapturerSource>();
 let currentProjectPath: string | null = null;
 let currentRecordingSession: RecordingSession | null = null;
+/** Emphasis marks collected during the active recording (cleared on start/finalize). */
+let pendingRecordingMarks: RecordingMark[] = [];
 
 // Cached source from the user's pick. Used by setDisplayMediaRequestHandler in main.ts for cursor-free capture.
 export function getSelectedDesktopSource(): DesktopCapturerSource | null {
@@ -1209,13 +1214,27 @@ function consumeCaptureRegionFromSelectedSource(): CaptureCropRegion | undefined
 	return region;
 }
 
+function consumePendingRecordingMarks(): RecordingMark[] {
+	const marks = pendingRecordingMarks;
+	pendingRecordingMarks = [];
+	return marks;
+}
+
+function clearPendingRecordingMarks() {
+	pendingRecordingMarks = [];
+}
+
 /**
- * Attach capture-region crop when finalizing a new recording, then set in-memory
- * session. Callers must persist the returned object (not the pre-merge session).
+ * Attach capture-region crop + in-recording marks when finalizing a new recording,
+ * then set in-memory session. Callers must persist the returned object.
  */
 function finalizeNewRecordingSession(session: RecordingSession): RecordingSession {
 	const cropRegion = session.cropRegion ?? consumeCaptureRegionFromSelectedSource();
-	const finalized = cropRegion ? { ...session, cropRegion } : session;
+	const pendingMarks = consumePendingRecordingMarks();
+	const marks = normalizeRecordingMarks(session.marks) ?? normalizeRecordingMarks(pendingMarks);
+	let finalized: RecordingSession = session;
+	if (cropRegion) finalized = { ...finalized, cropRegion };
+	if (marks) finalized = { ...finalized, marks };
 	setCurrentRecordingSessionState(finalized);
 	return finalized;
 }
@@ -1812,6 +1831,7 @@ export function registerIpcHandlers(
 				nativeWindowsCaptureTargetPath = outputPath;
 				nativeWindowsCaptureWebcamTargetPath = request.webcam.enabled ? webcamOutputPath : null;
 				nativeWindowsCaptureRecordingId = recordingId;
+				clearPendingRecordingMarks();
 				nativeWindowsCursorOffsetMs = 0;
 				nativeWindowsCursorCaptureMode = cursorCaptureMode;
 				nativeWindowsCursorRecordingStartMs = 0;
@@ -1967,6 +1987,7 @@ export function registerIpcHandlers(
 			nativeMacCaptureOutput = "";
 			nativeMacCaptureTargetPath = outputPath;
 			nativeMacCaptureRecordingId = recordingId;
+			clearPendingRecordingMarks();
 			nativeMacCursorOffsetMs = 0;
 			nativeMacCursorCaptureMode = cursorCaptureMode;
 			nativeMacCursorRecordingStartMs = 0;
@@ -2325,16 +2346,17 @@ export function registerIpcHandlers(
 						? payload.recordingId
 						: Date.now();
 				const cursorCaptureMode = normalizeCursorCaptureMode(payload.cursorCaptureMode);
-				const existingCrop =
+				const existingSession =
 					currentRecordingSession?.screenVideoPath === screenVideoPath
-						? currentRecordingSession.cropRegion
-						: (await loadRecordedSessionForVideoPath(screenVideoPath))?.cropRegion;
+						? currentRecordingSession
+						: await loadRecordedSessionForVideoPath(screenVideoPath);
 				const session: RecordingSession = {
 					screenVideoPath,
 					webcamVideoPath,
 					createdAt,
 					...(cursorCaptureMode ? { cursorCaptureMode } : {}),
-					...(existingCrop ? { cropRegion: existingCrop } : {}),
+					...(existingSession?.cropRegion ? { cropRegion: existingSession.cropRegion } : {}),
+					...(existingSession?.marks ? { marks: existingSession.marks } : {}),
 				};
 				setCurrentRecordingSessionState(session);
 				currentProjectPath = null;
@@ -2493,6 +2515,9 @@ export function registerIpcHandlers(
 		async (_, recording: boolean, recordingId?: number, cursorCaptureMode?: CursorCaptureMode) => {
 			const normalizedCursorCaptureMode =
 				normalizeCursorCaptureMode(cursorCaptureMode) ?? "editable-overlay";
+			if (recording) {
+				clearPendingRecordingMarks();
+			}
 			if (recording && normalizedCursorCaptureMode === "editable-overlay") {
 				await startCursorRecording(recordingId);
 			} else {
@@ -2693,6 +2718,35 @@ export function registerIpcHandlers(
 			return { success: false, error: "file path required" };
 		}
 		return shareExportedFile(filePath, getMainWindow());
+	});
+
+	ipcMain.handle("clear-recording-marks", () => {
+		clearPendingRecordingMarks();
+		return { success: true };
+	});
+
+	ipcMain.handle("add-recording-mark", (_event, timeMs: unknown) => {
+		const t =
+			typeof timeMs === "number" && Number.isFinite(timeMs) ? Math.max(0, timeMs) : Number.NaN;
+		if (!Number.isFinite(t)) {
+			return { success: false, error: "timeMs required" };
+		}
+		const point = screen.getCursorScreenPoint();
+		const display = screen.getDisplayNearestPoint(point);
+		const width = Math.max(1, display.bounds.width);
+		const height = Math.max(1, display.bounds.height);
+		const mark = normalizeRecordingMark({
+			id: `mark-${Date.now()}-${pendingRecordingMarks.length + 1}`,
+			timeMs: t,
+			cx: (point.x - display.bounds.x) / width,
+			cy: (point.y - display.bounds.y) / height,
+			kind: "emphasis",
+		});
+		if (!mark) {
+			return { success: false, error: "invalid mark" };
+		}
+		pendingRecordingMarks.push(mark);
+		return { success: true, mark, count: pendingRecordingMarks.length };
 	});
 
 	ipcMain.handle("read-binary-file", async (_, filePath: string) => {
