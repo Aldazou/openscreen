@@ -53,6 +53,21 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	getSelectedSource: () => {
 		return ipcRenderer.invoke("get-selected-source");
 	},
+	openRegionPicker: (displayId?: string) => {
+		return ipcRenderer.invoke("open-region-picker", displayId);
+	},
+	regionPickerComplete: (payload: {
+		canceled: boolean;
+		region?: { x: number; y: number; width: number; height: number };
+	}) => {
+		return ipcRenderer.invoke("region-picker-complete", payload);
+	},
+	listRecentRecordings: () => {
+		return ipcRenderer.invoke("list-recent-recordings");
+	},
+	copyTextToClipboard: (text: string) => {
+		return ipcRenderer.invoke("copy-text-to-clipboard", text);
+	},
 	requestCameraAccess: () => {
 		return ipcRenderer.invoke("request-camera-access");
 	},
@@ -279,5 +294,95 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	},
 	sendCloseConfirmResponse: (choice: "save" | "discard" | "cancel") => {
 		ipcRenderer.send("close-confirm-response", choice);
+	},
+
+	// AI Director foundation
+	aiSetApiKey: (provider: import("../src/lib/ai/types").AiProviderId, key: string) => {
+		return ipcRenderer.invoke("ai-set-api-key", provider, key);
+	},
+	aiClearApiKey: (provider: import("../src/lib/ai/types").AiProviderId) => {
+		return ipcRenderer.invoke("ai-clear-api-key", provider);
+	},
+	aiGetApiKeyStatus: (provider: import("../src/lib/ai/types").AiProviderId) => {
+		return ipcRenderer.invoke("ai-get-api-key-status", provider);
+	},
+	aiGetAllApiKeyStatuses: () => {
+		return ipcRenderer.invoke("ai-get-all-api-key-statuses");
+	},
+	aiListAssets: (projectId: string) => {
+		return ipcRenderer.invoke("ai-list-assets", projectId);
+	},
+	aiOpenImportPicker: () => {
+		return ipcRenderer.invoke("ai-open-import-picker");
+	},
+	aiImportFile: (payload: { projectId: string; sourcePath: string; prompt?: string }) => {
+		return ipcRenderer.invoke("ai-import-file", payload);
+	},
+	aiDeleteAsset: (payload: { projectId: string; assetId: string }) => {
+		return ipcRenderer.invoke("ai-delete-asset", payload);
+	},
+	aiEnqueueImportJob: (payload: {
+		kind: "import-file" | "import-url";
+		projectId: string;
+		sourcePath?: string;
+		url?: string;
+		prompt?: string;
+	}) => {
+		return ipcRenderer.invoke("ai-enqueue-import-job", payload);
+	},
+	aiListJobs: () => {
+		return ipcRenderer.invoke("ai-list-jobs");
+	},
+	aiGetJob: (jobId: string) => {
+		return ipcRenderer.invoke("ai-get-job", jobId);
+	},
+	aiCancelJob: (jobId: string) => {
+		return ipcRenderer.invoke("ai-cancel-job", jobId);
+	},
+	onAiJobProgress: (callback: (payload: { job: import("../src/lib/ai/types").AiJob }) => void) => {
+		const listener = (_event: unknown, payload: { job: import("../src/lib/ai/types").AiJob }) =>
+			callback(payload);
+		ipcRenderer.on("ai-job-progress", listener);
+		return () => ipcRenderer.removeListener("ai-job-progress", listener);
+	},
+	aiListVoices: () => {
+		return ipcRenderer.invoke("ai-list-voices");
+	},
+	aiGenerateTts: (payload: { projectId: string; text: string; voiceId?: string }) => {
+		return ipcRenderer.invoke("ai-generate-tts", payload);
+	},
+	aiGenerateMusic: (payload: { projectId: string; prompt: string; lengthMs?: number }) => {
+		return ipcRenderer.invoke("ai-generate-music", payload);
+	},
+	aiGenerateImage: (payload: { projectId: string; prompt: string }) => {
+		return ipcRenderer.invoke("ai-generate-image", payload);
+	},
+	aiGenerateVideo: (payload: { projectId: string; prompt: string; durationSec?: 5 | 10 }) => {
+		return ipcRenderer.invoke("ai-generate-video", payload);
+	},
+	aiListAvatars: () => {
+		return ipcRenderer.invoke("ai-list-avatars");
+	},
+	aiListHeyGenVoices: () => {
+		return ipcRenderer.invoke("ai-list-heygen-voices");
+	},
+	aiOpenPhotoAvatarPicker: () => {
+		return ipcRenderer.invoke("ai-open-photo-avatar-picker");
+	},
+	aiCreatePhotoAvatar: (payload: { imagePath: string; name?: string }) => {
+		return ipcRenderer.invoke("ai-create-photo-avatar", payload);
+	},
+	aiGenerateAvatar: (payload: {
+		projectId: string;
+		script: string;
+		avatarId?: string;
+		talkingPhotoId?: string;
+		voiceId?: string;
+		photoPath?: string;
+	}) => {
+		return ipcRenderer.invoke("ai-generate-avatar", payload);
+	},
+	aiDirectorTurn: (payload: import("../src/lib/ai/types").DirectorTurnRequest) => {
+		return ipcRenderer.invoke("ai-director-turn", payload);
 	},
 });

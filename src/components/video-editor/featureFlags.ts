@@ -1,1 +1,1 @@
-export const BLUR_REGIONS_ENABLED = false;
+export const BLUR_REGIONS_ENABLED = true;

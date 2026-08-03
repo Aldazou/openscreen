@@ -62,7 +62,7 @@ function normalizeWallpaperValue(value: string): string {
 	return CANONICAL_WALLPAPERS.has(canonical) ? canonical : DEFAULT_WALLPAPER;
 }
 
-export const PROJECT_VERSION = 2;
+export const PROJECT_VERSION = 3;
 
 export interface ProjectEditorState {
 	wallpaper: string;
@@ -92,6 +92,9 @@ export interface ProjectEditorState {
 	gifLoop: boolean;
 	gifSizePreset: GifSizePreset;
 	cursorTheme: string;
+	overlayClips: import("@/lib/ai/types").OverlayClip[];
+	audioClips: import("@/lib/ai/types").AudioClip[];
+	mediaAssets: import("@/lib/ai/types").MediaAsset[];
 }
 
 export interface EditorProjectData {
@@ -530,6 +533,31 @@ export function normalizeProjectEditor(editor: Partial<ProjectEditorState>): Pro
 			editor.gifSizePreset === "original"
 				? editor.gifSizePreset
 				: DEFAULT_GIF_SETTINGS.sizePreset,
+		overlayClips: Array.isArray(editor.overlayClips)
+			? (editor.overlayClips as ProjectEditorState["overlayClips"]).filter(
+					(clip) =>
+						clip &&
+						typeof clip.id === "string" &&
+						typeof clip.assetId === "string" &&
+						isFiniteNumber(clip.timelineStartMs) &&
+						isFiniteNumber(clip.endMs),
+				)
+			: [],
+		audioClips: Array.isArray(editor.audioClips)
+			? (editor.audioClips as ProjectEditorState["audioClips"]).filter(
+					(clip) =>
+						clip &&
+						typeof clip.id === "string" &&
+						typeof clip.assetId === "string" &&
+						isFiniteNumber(clip.timelineStartMs) &&
+						isFiniteNumber(clip.durationMs),
+				)
+			: [],
+		mediaAssets: Array.isArray(editor.mediaAssets)
+			? (editor.mediaAssets as ProjectEditorState["mediaAssets"]).filter(
+					(asset) => asset && typeof asset.id === "string" && typeof asset.path === "string",
+				)
+			: [],
 	};
 }
 

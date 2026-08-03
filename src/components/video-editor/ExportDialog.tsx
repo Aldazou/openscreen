@@ -1,5 +1,6 @@
-import { Download, Loader2, X } from "lucide-react";
+import { Check, Copy, Download, FolderOpen, Loader2, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useScopedT } from "@/contexts/I18nContext";
 import type { ExportProgress } from "@/lib/exporter";
@@ -29,10 +30,12 @@ export function ExportDialog({
 }: ExportDialogProps) {
 	const t = useScopedT("dialogs");
 	const [showSuccess, setShowSuccess] = useState(false);
+	const [copied, setCopied] = useState(false);
 
 	useEffect(() => {
 		if (isExporting) {
 			setShowSuccess(false);
+			setCopied(false);
 		}
 	}, [isExporting]);
 
@@ -40,25 +43,22 @@ export function ExportDialog({
 	useEffect(() => {
 		if (isOpen && !isExporting && !progress) {
 			setShowSuccess(false);
+			setCopied(false);
 		}
 	}, [isOpen, isExporting, progress]);
 
 	useEffect(() => {
 		if (!isExporting && progress && progress.percentage >= 100 && !error) {
 			setShowSuccess(true);
-			const timer = setTimeout(() => {
-				setShowSuccess(false);
-				onClose();
-			}, 2000);
-			return () => clearTimeout(timer);
+			// Keep success UI open so copy / reveal actions are usable; user dismisses.
+			return;
 		}
-	}, [isExporting, progress, error, onClose]);
+	}, [isExporting, progress, error]);
 
 	if (!isOpen) return null;
 
 	const formatLabel = exportFormat === "gif" ? "GIF" : "Video";
 
-	// Compiling phase: frames are done but the export is still finishing.
 	const isCompiling =
 		isExporting && progress && progress.percentage >= 100 && exportFormat === "gif";
 	const isFinalizing = progress?.phase === "finalizing";
@@ -85,6 +85,25 @@ export function ExportDialog({
 		return t("export.exportingFormat", { format: formatLabel });
 	};
 
+	const handleCopyPath = async () => {
+		if (!exportedFilePath) return;
+		try {
+			if (window.electronAPI?.copyTextToClipboard) {
+				const result = await window.electronAPI.copyTextToClipboard(exportedFilePath);
+				if (!result.success) {
+					toast.error(result.error ?? t("export.copyFailed"));
+					return;
+				}
+			} else {
+				await navigator.clipboard.writeText(exportedFilePath);
+			}
+			setCopied(true);
+			window.setTimeout(() => setCopied(false), 1500);
+		} catch {
+			toast.error(t("export.copyFailed"));
+		}
+	};
+
 	return (
 		<>
 			<div
@@ -107,17 +126,32 @@ export function ExportDialog({
 										{t("export.yourFormatReady", { format: formatLabel.toLowerCase() })}
 									</span>
 									{exportedFilePath && (
-										<Button
-											variant="secondary"
-											onClick={onShowInFolder}
-											className="mt-2 w-fit px-3 py-1 text-sm rounded-md bg-white/10 hover:bg-white/20 text-slate-200"
-										>
-											{t("export.showInFolder")}
-										</Button>
+										<div className="mt-2 flex flex-wrap gap-2">
+											<Button
+												variant="secondary"
+												onClick={onShowInFolder}
+												className="w-fit gap-1.5 px-3 py-1 text-sm rounded-md bg-white/10 hover:bg-white/20 text-slate-200"
+											>
+												<FolderOpen className="h-3.5 w-3.5" />
+												{t("export.showInFolder")}
+											</Button>
+											<Button
+												variant="secondary"
+												onClick={() => void handleCopyPath()}
+												className="w-fit gap-1.5 px-3 py-1 text-sm rounded-md bg-white/10 hover:bg-white/20 text-slate-200"
+											>
+												{copied ? (
+													<Check className="h-3.5 w-3.5 text-[#34B27B]" />
+												) : (
+													<Copy className="h-3.5 w-3.5" />
+												)}
+												{copied ? t("export.copied") : t("export.copyPath")}
+											</Button>
+										</div>
 									)}
 									{exportedFilePath && (
 										<span className="text-xs text-slate-500 break-all max-w-xs mt-1">
-											{exportedFilePath.split("/").pop()}
+											{exportedFilePath}
 										</span>
 									)}
 								</div>
@@ -191,7 +225,6 @@ export function ExportDialog({
 							</div>
 							<div className="h-2 bg-white/5 rounded-full overflow-hidden border border-white/5">
 								{isCompiling || isFinalizing ? (
-									// Real progress if we have it, otherwise an indeterminate bar.
 									renderProgress !== undefined && renderProgress > 0 ? (
 										<div
 											className="h-full bg-[#34B27B] shadow-[0_0_10px_rgba(52,178,123,0.3)] transition-all duration-300 ease-out"
@@ -260,8 +293,8 @@ export function ExportDialog({
 				)}
 
 				{showSuccess && (
-					<div className="text-center py-4 animate-in zoom-in-95">
-						<p className="text-lg text-slate-200 font-medium">
+					<div className="text-center py-2 animate-in zoom-in-95">
+						<p className="text-sm text-slate-300 font-medium">
 							{t("export.savedSuccessfully", { format: formatLabel })}
 						</p>
 					</div>

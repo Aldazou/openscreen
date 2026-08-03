@@ -218,7 +218,11 @@
 		"motionBlur": "Motion Blur",
 		"clickBounce": "Click Bounce",
 		"clipToBounds": "Clip to Canvas",
-		"clipToBoundsDescription": "Keeps the cursor inside the video frame. Turn off to let the cursor extend past the edges - useful when zoomed in or panned."
+		"clipToBoundsDescription": "Keeps the cursor inside the video frame. Turn off to let the cursor extend past the edges - useful when zoomed in or panned.",
+		"title": "Cursor",
+		"linuxUnavailable": "On Linux, only cursor position is captured (for auto-zoom). Cursor themes, click effects, and the editable overlay need the native macOS/Windows recorder.",
+		"systemCursorRecording": "This recording used the system cursor baked into the video. Switch to editable cursor mode before recording to restyle it here.",
+		"noCursorData": "No editable cursor data in this recording. Record with editable cursor mode on macOS or Windows to customize themes and click effects."
 	},
 	"language": {
 		"title": "Language"

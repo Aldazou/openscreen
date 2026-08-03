@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { MdCheck } from "react-icons/md";
 import { useScopedT } from "@/contexts/I18nContext";
+import { loadUserPreferences, saveUserPreferences } from "@/lib/userPreferences";
 import { Button } from "../ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import styles from "./SourceSelector.module.css";
@@ -30,21 +31,34 @@ export function SourceSelector() {
 				thumbnailSize: { width: 320, height: 180 },
 				fetchWindowIcons: true,
 			});
-			setSources(
-				rawSources.map((source) => ({
-					id: source.id,
-					name:
-						source.id.startsWith("window:") && source.name.includes(" — ")
-							? source.name.split(" — ")[1] || source.name
-							: source.name,
-					thumbnail: source.thumbnail,
-					display_id: source.display_id,
-					appIcon: source.appIcon,
-				})),
-			);
-			setSelectedSource((current) =>
-				current && rawSources.some((source) => source.id === current.id) ? current : null,
-			);
+			const mapped = rawSources.map((source) => ({
+				id: source.id,
+				name:
+					source.id.startsWith("window:") && source.name.includes(" — ")
+						? source.name.split(" — ")[1] || source.name
+						: source.name,
+				thumbnail: source.thumbnail,
+				display_id: source.display_id,
+				appIcon: source.appIcon,
+			}));
+			setSources(mapped);
+			setSelectedSource((current) => {
+				if (current && mapped.some((source) => source.id === current.id)) {
+					return current;
+				}
+				const remembered = loadUserPreferences().lastRecordingSource;
+				if (!remembered) return null;
+				const byId = mapped.find((source) => source.id === remembered.id);
+				if (byId) return byId;
+				// Window ids churn across launches; fall back to same-kind name match.
+				return (
+					mapped.find(
+						(source) =>
+							source.name === remembered.name &&
+							source.id.split(":")[0] === remembered.id.split(":")[0],
+					) ?? null
+				);
+			});
 		} catch (error) {
 			console.error("Error loading sources:", error);
 			setSources([]);
@@ -63,9 +77,30 @@ export function SourceSelector() {
 	const windowSources = sources.filter((s) => s.id.startsWith("window:"));
 	const hasNoSources = !loading && sources.length === 0;
 
-	const handleSourceSelect = (source: DesktopSource) => setSelectedSource(source);
+	const rememberSource = (source: DesktopSource) => {
+		saveUserPreferences({
+			lastRecordingSource: { id: source.id, name: source.name },
+		});
+	};
+
+	const handleSourceSelect = (source: DesktopSource) => {
+		setSelectedSource(source);
+		rememberSource(source);
+	};
 	const handleShare = async () => {
-		if (selectedSource) await window.electronAPI.selectSource(selectedSource);
+		if (!selectedSource) return;
+		rememberSource(selectedSource);
+		await window.electronAPI.selectSource(selectedSource);
+	};
+	const handleShareRegion = async () => {
+		if (!selectedSource || !selectedSource.id.startsWith("screen:")) return;
+		const result = await window.electronAPI.openRegionPicker(selectedSource.display_id);
+		if (result.canceled || !result.region) return;
+		rememberSource(selectedSource);
+		await window.electronAPI.selectSource({
+			...selectedSource,
+			captureRegion: result.region,
+		});
 	};
 
 	if (loading) {
@@ -188,6 +223,15 @@ export function SourceSelector() {
 					className="h-8 rounded-lg px-5 text-[11px] text-zinc-400 transition-transform duration-150 hover:bg-white/5 hover:text-white active:scale-95"
 				>
 					{tc("actions.cancel")}
+				</Button>
+				<Button
+					data-testid="source-selector-region-button"
+					variant="ghost"
+					onClick={() => void handleShareRegion()}
+					disabled={!selectedSource?.id.startsWith("screen:")}
+					className="h-8 rounded-lg px-4 text-[11px] text-zinc-300 transition-transform duration-150 hover:bg-white/5 hover:text-white active:scale-95 disabled:opacity-30"
+				>
+					{t("sourceSelector.recordRegion")}
 				</Button>
 				<Button
 					data-testid="source-selector-share-button"

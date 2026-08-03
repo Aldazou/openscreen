@@ -3,6 +3,7 @@ import {
 	DEFAULT_EXPORT_SETTINGS,
 } from "@/components/video-editor/editorDefaults";
 import type { ExportFormat, ExportQuality } from "@/lib/exporter";
+import { pushRecentProject, type RecentProjectEntry } from "@/lib/recentItems";
 import type { AspectRatio } from "@/utils/aspectRatioUtils";
 
 const PREFS_KEY = "openscreen_user_preferences";
@@ -33,6 +34,18 @@ export interface UserPreferences {
 	projectFolder: string | null;
 	/** Recording HUD control layout */
 	trayLayout: "horizontal" | "vertical";
+	/** Recently opened .openscreen projects */
+	recentProjects: RecentProjectEntry[];
+	/** Remembered HUD: microphone on by default */
+	recordingMicrophoneEnabled: boolean;
+	/** Remembered HUD: system audio on by default */
+	recordingSystemAudioEnabled: boolean;
+	/** Remembered HUD: webcam on by default */
+	recordingWebcamEnabled: boolean;
+	/** Remembered HUD: countdown seconds before record (0 = off) */
+	recordingCountdownSec: 0 | 3;
+	/** Last selected capture source (id + name for rematch after relaunch) */
+	lastRecordingSource: { id: string; name: string } | null;
 }
 
 export const DEFAULT_PREFS: UserPreferences = {
@@ -43,6 +56,12 @@ export const DEFAULT_PREFS: UserPreferences = {
 	exportFolder: null,
 	projectFolder: null,
 	trayLayout: "horizontal",
+	recentProjects: [],
+	recordingMicrophoneEnabled: false,
+	recordingSystemAudioEnabled: false,
+	recordingWebcamEnabled: false,
+	recordingCountdownSec: 3,
+	lastRecordingSource: null,
 };
 
 /** Parses stored preferences without throwing on malformed JSON. */
@@ -99,7 +118,61 @@ export function loadUserPreferences(): UserPreferences {
 			raw.trayLayout === "horizontal" || raw.trayLayout === "vertical"
 				? raw.trayLayout
 				: DEFAULT_PREFS.trayLayout,
+		recentProjects: Array.isArray(raw.recentProjects)
+			? raw.recentProjects
+					.filter((entry): entry is RecentProjectEntry =>
+						Boolean(
+							entry &&
+								typeof entry === "object" &&
+								typeof (entry as RecentProjectEntry).path === "string" &&
+								(entry as RecentProjectEntry).path.length > 0 &&
+								typeof (entry as RecentProjectEntry).name === "string" &&
+								typeof (entry as RecentProjectEntry).openedAt === "number",
+						),
+					)
+					.slice(0, 8)
+			: DEFAULT_PREFS.recentProjects,
+		recordingMicrophoneEnabled:
+			typeof raw.recordingMicrophoneEnabled === "boolean"
+				? raw.recordingMicrophoneEnabled
+				: DEFAULT_PREFS.recordingMicrophoneEnabled,
+		recordingSystemAudioEnabled:
+			typeof raw.recordingSystemAudioEnabled === "boolean"
+				? raw.recordingSystemAudioEnabled
+				: DEFAULT_PREFS.recordingSystemAudioEnabled,
+		recordingWebcamEnabled:
+			typeof raw.recordingWebcamEnabled === "boolean"
+				? raw.recordingWebcamEnabled
+				: DEFAULT_PREFS.recordingWebcamEnabled,
+		recordingCountdownSec:
+			raw.recordingCountdownSec === 0 || raw.recordingCountdownSec === 3
+				? raw.recordingCountdownSec
+				: DEFAULT_PREFS.recordingCountdownSec,
+		lastRecordingSource: (() => {
+			const entry = raw.lastRecordingSource;
+			if (
+				entry &&
+				typeof entry === "object" &&
+				typeof (entry as { id?: unknown }).id === "string" &&
+				(entry as { id: string }).id.length > 0 &&
+				typeof (entry as { name?: unknown }).name === "string"
+			) {
+				return {
+					id: (entry as { id: string }).id,
+					name: (entry as { name: string }).name,
+				};
+			}
+			return DEFAULT_PREFS.lastRecordingSource;
+		})(),
 	};
+}
+
+/** Remember a project path in the recent-projects list. */
+export function rememberRecentProject(filePath: string): void {
+	const current = loadUserPreferences();
+	saveUserPreferences({
+		recentProjects: pushRecentProject(current.recentProjects, filePath),
+	});
 }
 
 /**

@@ -10,7 +10,9 @@
 		"openProject": "Open project",
 		"useVerticalTray": "Use vertical tray",
 		"useHorizontalTray": "Use horizontal tray",
-		"openStudio": "Open Studio"
+		"openStudio": "Open Studio",
+		"countdownOn": "Countdown: 3s (click for none)",
+		"countdownOff": "Countdown: off (click for 3s)"
 	},
 	"audio": {
 		"enableSystemAudio": "Enable system audio",
@@ -38,7 +40,8 @@
 		"emptyTitle": "No screens or windows found",
 		"emptyDescription": "If you just granted screen recording permission, reload this picker. On macOS you may need to reopen OpenScreen.",
 		"loadFailedDescription": "OpenScreen could not load capture sources. Reload this picker and try again.",
-		"defaultSourceName": "Screen"
+		"defaultSourceName": "Screen",
+		"recordRegion": "Select region…"
 	},
 	"recording": {
 		"selectSource": "Please select a source to record"

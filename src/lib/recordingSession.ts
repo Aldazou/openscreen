@@ -1,7 +1,16 @@
+export interface CaptureCropRegion {
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+}
+
 export interface ProjectMedia {
 	screenVideoPath: string;
 	webcamVideoPath?: string;
 	cursorCaptureMode?: CursorCaptureMode;
+	/** Normalized crop from region recording (0–1 relative to full capture). */
+	cropRegion?: CaptureCropRegion;
 }
 
 export type CursorCaptureMode = "editable-overlay" | "system";
@@ -56,11 +65,31 @@ export function normalizeProjectMedia(candidate: unknown): ProjectMedia | null {
 
 	const webcamVideoPath = normalizePath(raw.webcamVideoPath);
 	const cursorCaptureMode = normalizeCursorCaptureMode(raw.cursorCaptureMode);
+	const cropRegion = normalizeCaptureCropRegion(raw.cropRegion);
 
 	return {
 		screenVideoPath,
 		...(webcamVideoPath ? { webcamVideoPath } : {}),
 		...(cursorCaptureMode ? { cursorCaptureMode } : {}),
+		...(cropRegion ? { cropRegion } : {}),
+	};
+}
+
+export function normalizeCaptureCropRegion(value: unknown): CaptureCropRegion | undefined {
+	if (!value || typeof value !== "object") return undefined;
+	const raw = value as Partial<CaptureCropRegion>;
+	const x = typeof raw.x === "number" ? raw.x : NaN;
+	const y = typeof raw.y === "number" ? raw.y : NaN;
+	const width = typeof raw.width === "number" ? raw.width : NaN;
+	const height = typeof raw.height === "number" ? raw.height : NaN;
+	if (![x, y, width, height].every((n) => Number.isFinite(n))) return undefined;
+	if (x < 0 || y < 0 || width <= 0.02 || height <= 0.02) return undefined;
+	if (x + width > 1.001 || y + height > 1.001) return undefined;
+	return {
+		x: Math.max(0, Math.min(1, x)),
+		y: Math.max(0, Math.min(1, y)),
+		width: Math.max(0.02, Math.min(1 - x, width)),
+		height: Math.max(0.02, Math.min(1 - y, height)),
 	};
 }
 

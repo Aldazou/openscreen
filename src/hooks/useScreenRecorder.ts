@@ -13,6 +13,7 @@ import {
 } from "@/lib/nativeWindowsRecording";
 import type { CursorCaptureMode, RecordedVideoAssetInput } from "@/lib/recordingSession";
 import { requestCameraAccess } from "@/lib/requestCameraAccess";
+import { loadUserPreferences, saveUserPreferences } from "@/lib/userPreferences";
 import { createRecorderHandle, type RecorderHandle } from "./recorderHandle";
 
 const TARGET_FRAME_RATE = 60;
@@ -72,6 +73,8 @@ type UseScreenRecorderReturn = {
 	setWebcamEnabled: (enabled: boolean) => Promise<boolean>;
 	cursorCaptureMode: CursorCaptureMode;
 	setCursorCaptureMode: (mode: CursorCaptureMode) => void;
+	countdownSec: 0 | 3;
+	setCountdownSec: (value: 0 | 3) => void;
 };
 
 type NativeWindowsRecordingHandle = {
@@ -89,17 +92,38 @@ type NativeMacRecordingHandle = {
 
 export function useScreenRecorder(): UseScreenRecorderReturn {
 	const t = useScopedT("editor");
+	const initialPrefs = useRef(loadUserPreferences()).current;
 	const [recording, setRecording] = useState(false);
 	const [paused, setPaused] = useState(false);
 	const [elapsedSeconds, setElapsedSeconds] = useState(0);
-	const [microphoneEnabled, setMicrophoneEnabled] = useState(false);
+	const [microphoneEnabled, setMicrophoneEnabledState] = useState(
+		initialPrefs.recordingMicrophoneEnabled,
+	);
 	const [microphoneDeviceId, setMicrophoneDeviceId] = useState<string | undefined>(undefined);
 	const [microphoneDeviceName, setMicrophoneDeviceName] = useState<string | undefined>(undefined);
 	const [webcamDeviceId, setWebcamDeviceId] = useState<string | undefined>(undefined);
 	const [webcamDeviceName, setWebcamDeviceName] = useState<string | undefined>(undefined);
-	const [systemAudioEnabled, setSystemAudioEnabled] = useState(false);
-	const [webcamEnabled, setWebcamEnabledState] = useState(false);
+	const [systemAudioEnabled, setSystemAudioEnabledState] = useState(
+		initialPrefs.recordingSystemAudioEnabled,
+	);
+	const [webcamEnabled, setWebcamEnabledState] = useState(initialPrefs.recordingWebcamEnabled);
 	const [cursorCaptureMode, setCursorCaptureMode] = useState<CursorCaptureMode>("editable-overlay");
+	const [countdownSec, setCountdownSecState] = useState<0 | 3>(initialPrefs.recordingCountdownSec);
+
+	const setMicrophoneEnabled = useCallback((enabled: boolean) => {
+		setMicrophoneEnabledState(enabled);
+		saveUserPreferences({ recordingMicrophoneEnabled: enabled });
+	}, []);
+
+	const setSystemAudioEnabled = useCallback((enabled: boolean) => {
+		setSystemAudioEnabledState(enabled);
+		saveUserPreferences({ recordingSystemAudioEnabled: enabled });
+	}, []);
+
+	const setCountdownSec = useCallback((value: 0 | 3) => {
+		setCountdownSecState(value);
+		saveUserPreferences({ recordingCountdownSec: value });
+	}, []);
 	const screenRecorder = useRef<RecorderHandle | null>(null);
 	const webcamRecorder = useRef<RecorderHandle | null>(null);
 	const nativeWindowsRecording = useRef<NativeWindowsRecordingHandle | null>(null);
@@ -204,6 +228,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 		async (enabled: boolean) => {
 			if (!enabled) {
 				setWebcamEnabledState(false);
+				saveUserPreferences({ recordingWebcamEnabled: false });
 				return true;
 			}
 
@@ -219,6 +244,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			}
 
 			setWebcamEnabledState(true);
+			saveUserPreferences({ recordingWebcamEnabled: true });
 			return true;
 		},
 		[t],
@@ -1087,8 +1113,12 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 
 		let overlayHiddenBeforeStart = false;
 		try {
-			const values = [3, 2, 1];
-			const overlayShown = await safeShowCountdownOverlay(values[0], runId);
+			const values =
+				countdownSec <= 0
+					? ([] as number[])
+					: Array.from({ length: countdownSec }, (_, index) => countdownSec - index);
+			const overlayShown =
+				values.length > 0 ? await safeShowCountdownOverlay(values[0], runId) : false;
 
 			if (countdownRunId.current !== runId) {
 				return;
@@ -1682,5 +1712,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 		setWebcamEnabled,
 		cursorCaptureMode,
 		setCursorCaptureMode,
+		countdownSec,
+		setCountdownSec,
 	};
 }

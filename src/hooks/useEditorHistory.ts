@@ -20,6 +20,7 @@ import {
 	DEFAULT_WEBCAM_MIRRORED,
 	DEFAULT_WEBCAM_REACTIVE_ZOOM,
 } from "@/components/video-editor/types";
+import type { AudioClip, MediaAsset, OverlayClip } from "@/lib/ai/types";
 import type { AspectRatio } from "@/utils/aspectRatioUtils";
 
 // Undoable state. Selection IDs are excluded, since undoing a selection change
@@ -49,6 +50,12 @@ export interface EditorState {
 	webcamReactiveZoom: boolean;
 	webcamSizePreset: WebcamSizePreset;
 	webcamPosition: WebcamPosition | null;
+	/** AI / imported visual overlays composited over the screen recording. */
+	overlayClips: OverlayClip[];
+	/** Secondary audio beds (TTS, music, SFX) mixed on export/preview. */
+	audioClips: AudioClip[];
+	/** Snapshot of media-library assets referenced by this project. */
+	mediaAssets: MediaAsset[];
 }
 
 export const INITIAL_EDITOR_STATE: EditorState = {
@@ -73,6 +80,9 @@ export const INITIAL_EDITOR_STATE: EditorState = {
 	webcamReactiveZoom: DEFAULT_WEBCAM_REACTIVE_ZOOM,
 	webcamSizePreset: DEFAULT_WEBCAM_SETTINGS.sizePreset,
 	webcamPosition: DEFAULT_WEBCAM_SETTINGS.position,
+	overlayClips: [],
+	audioClips: [],
+	mediaAssets: [],
 };
 
 type StateUpdate = Partial<EditorState> | ((prev: EditorState) => Partial<EditorState>);

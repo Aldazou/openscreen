@@ -9,6 +9,7 @@ import type { DesktopCapturerSource } from "electron";
 import {
 	app,
 	BrowserWindow,
+	clipboard,
 	desktopCapturer,
 	dialog,
 	ipcMain,
@@ -19,7 +20,9 @@ import {
 import type { NativeMacRecordingRequest } from "../../src/lib/nativeMacRecording";
 import type { NativeWindowsRecordingRequest } from "../../src/lib/nativeWindowsRecording";
 import {
+	type CaptureCropRegion,
 	type CursorCaptureMode,
+	normalizeCaptureCropRegion,
 	normalizeCursorCaptureMode,
 	normalizeProjectMedia,
 	normalizeRecordingSession,
@@ -41,6 +44,8 @@ import { createCursorRecordingSession } from "../native-bridge/cursor/recording/
 import { requestMacCursorAccessibilityAccess } from "../native-bridge/cursor/recording/macNativeCursorRecordingSession";
 import type { CursorRecordingSession } from "../native-bridge/cursor/recording/session";
 import { patchWebmDurationOnDisk } from "../recording/webm-duration";
+import { createRegionPickerWindow } from "../windows";
+import { registerAiIpcHandlers } from "./ai";
 import { registerNativeBridgeHandlers } from "./nativeBridge";
 import { RecordingStreamRegistry, registerRecordingStreamHandlers } from "./recordingStream";
 
@@ -64,13 +69,18 @@ const nativeMacCaptureEvents = new EventEmitter();
 
 // Paths the user approved via file picker or project load (i.e. outside the default dirs).
 const approvedPaths = new Set<string>();
+const extraAllowedReadDirs = new Set<string>();
 
 function approveFilePath(filePath: string): void {
 	approvedPaths.add(path.resolve(filePath));
 }
 
+function addAllowedReadDir(dirPath: string): void {
+	extraAllowedReadDirs.add(path.resolve(dirPath));
+}
+
 function getAllowedReadDirs(): string[] {
-	return [RECORDINGS_DIR];
+	return [RECORDINGS_DIR, ...extraAllowedReadDirs];
 }
 
 function isPathWithinDir(filePath: string, dirPath: string): boolean {
@@ -1180,9 +1190,43 @@ function waitForNativeMacCaptureStop(proc: ChildProcessWithoutNullStreams) {
 	});
 }
 
+function captureRegionFromSelectedSource(): CaptureCropRegion | undefined {
+	return normalizeCaptureCropRegion(
+		selectedSource && typeof selectedSource === "object"
+			? (selectedSource as { captureRegion?: unknown }).captureRegion
+			: undefined,
+	);
+}
+
+/** Consume region crop once at finalize so it never leaks onto later sessions. */
+function consumeCaptureRegionFromSelectedSource(): CaptureCropRegion | undefined {
+	const region = captureRegionFromSelectedSource();
+	if (selectedSource && "captureRegion" in selectedSource) {
+		const { captureRegion: _consumed, ...rest } = selectedSource;
+		selectedSource = rest;
+	}
+	return region;
+}
+
+/**
+ * Attach capture-region crop when finalizing a new recording, then set in-memory
+ * session. Callers must persist the returned object (not the pre-merge session).
+ */
+function finalizeNewRecordingSession(session: RecordingSession): RecordingSession {
+	const cropRegion = session.cropRegion ?? consumeCaptureRegionFromSelectedSource();
+	const finalized = cropRegion ? { ...session, cropRegion } : session;
+	setCurrentRecordingSessionState(finalized);
+	return finalized;
+}
+
 function setCurrentRecordingSessionState(session: RecordingSession | null) {
+	if (!session) {
+		currentRecordingSession = null;
+		currentVideoPath = null;
+		return;
+	}
 	currentRecordingSession = session;
-	currentVideoPath = session?.screenVideoPath ?? null;
+	currentVideoPath = session.screenVideoPath ?? null;
 }
 
 function getSessionManifestPathForVideo(videoPath: string) {
@@ -1414,6 +1458,122 @@ export function registerIpcHandlers(
 		}
 
 		return access;
+	});
+
+	let regionPickerWindow: BrowserWindow | null = null;
+	let regionPickerResolve:
+		| ((result: { canceled: boolean; region?: CaptureCropRegion }) => void)
+		| null = null;
+	let regionPickerPromise: Promise<{ canceled: boolean; region?: CaptureCropRegion }> | null = null;
+
+	ipcMain.handle("open-region-picker", async (_event, displayId?: unknown) => {
+		const sourceSelectorWin = getSourceSelectorWindow();
+		if (sourceSelectorWin && !sourceSelectorWin.isDestroyed()) {
+			sourceSelectorWin.hide();
+		}
+
+		if (regionPickerWindow && !regionPickerWindow.isDestroyed() && regionPickerPromise) {
+			regionPickerWindow.focus();
+			return regionPickerPromise;
+		}
+
+		const displays = screen.getAllDisplays();
+		const idNum = typeof displayId === "string" ? Number(displayId) : NaN;
+		const target =
+			(Number.isFinite(idNum) ? displays.find((d) => d.id === idNum) : undefined) ??
+			screen.getPrimaryDisplay();
+		regionPickerWindow = createRegionPickerWindow(target.bounds);
+		regionPickerWindow.on("closed", () => {
+			regionPickerWindow = null;
+			if (regionPickerResolve) {
+				regionPickerResolve({ canceled: true });
+				regionPickerResolve = null;
+				regionPickerPromise = null;
+			}
+			const selector = getSourceSelectorWindow();
+			if (selector && !selector.isDestroyed()) {
+				selector.show();
+				selector.focus();
+			}
+		});
+
+		regionPickerPromise = new Promise<{ canceled: boolean; region?: CaptureCropRegion }>(
+			(resolve) => {
+				regionPickerResolve = resolve;
+			},
+		);
+		return regionPickerPromise;
+	});
+
+	ipcMain.handle(
+		"region-picker-complete",
+		(_event, payload: { canceled?: boolean; region?: CaptureCropRegion }) => {
+			const result = payload?.canceled
+				? { canceled: true as const }
+				: {
+						canceled: false as const,
+						region: normalizeCaptureCropRegion(payload?.region),
+					};
+			if (!result.canceled && !result.region) {
+				regionPickerResolve?.({ canceled: true });
+			} else {
+				regionPickerResolve?.(
+					result.canceled ? { canceled: true } : { canceled: false, region: result.region },
+				);
+			}
+			regionPickerResolve = null;
+			regionPickerPromise = null;
+			if (regionPickerWindow && !regionPickerWindow.isDestroyed()) {
+				regionPickerWindow.close();
+			}
+			regionPickerWindow = null;
+			return { success: true };
+		},
+	);
+
+	ipcMain.handle("copy-text-to-clipboard", (_event, text: unknown) => {
+		if (typeof text !== "string" || !text) {
+			return { success: false, error: "text required" };
+		}
+		clipboard.writeText(text);
+		return { success: true };
+	});
+
+	ipcMain.handle("list-recent-recordings", async () => {
+		try {
+			const files = await fs.readdir(RECORDINGS_DIR);
+			const videoFiles = files.filter(
+				(file) =>
+					/\.(mp4|webm|mov)$/i.test(file) && !file.includes("-webcam") && !file.endsWith(".json"),
+			);
+			const entries = await Promise.all(
+				videoFiles.map(async (file) => {
+					const fullPath = path.join(RECORDINGS_DIR, file);
+					try {
+						const stat = await fs.stat(fullPath);
+						if (!stat.isFile()) return null;
+						return {
+							path: fullPath,
+							name: file,
+							modifiedAt: stat.mtimeMs,
+						};
+					} catch {
+						return null;
+					}
+				}),
+			);
+			const recordings = entries
+				.filter((e): e is NonNullable<typeof e> => Boolean(e))
+				.sort((a, b) => b.modifiedAt - a.modifiedAt)
+				.slice(0, 12);
+			return { success: true, recordings };
+		} catch (error) {
+			return {
+				success: false,
+				error: error instanceof Error ? error.message : String(error),
+				recordings: [],
+			};
+		}
 	});
 
 	ipcMain.handle("open-source-selector", async () => {
@@ -2009,10 +2169,11 @@ export function registerIpcHandlers(
 					webcamVideoPath = undefined;
 				}
 			}
-			const session: RecordingSession = webcamVideoPath
-				? { screenVideoPath, webcamVideoPath, createdAt: recordingId, cursorCaptureMode }
-				: { screenVideoPath, createdAt: recordingId, cursorCaptureMode };
-			setCurrentRecordingSessionState(session);
+			const session = finalizeNewRecordingSession(
+				webcamVideoPath
+					? { screenVideoPath, webcamVideoPath, createdAt: recordingId, cursorCaptureMode }
+					: { screenVideoPath, createdAt: recordingId, cursorCaptureMode },
+			);
 			currentProjectPath = null;
 
 			const sessionManifestPath = path.join(
@@ -2093,12 +2254,11 @@ export function registerIpcHandlers(
 				await writePendingCursorTelemetry(screenVideoPath);
 			}
 
-			const session: RecordingSession = {
+			const session = finalizeNewRecordingSession({
 				screenVideoPath,
 				createdAt: recordingId,
 				cursorCaptureMode,
-			};
-			setCurrentRecordingSessionState(session);
+			});
 			currentProjectPath = null;
 
 			const sessionManifestPath = path.join(
@@ -2164,11 +2324,16 @@ export function registerIpcHandlers(
 						? payload.recordingId
 						: Date.now();
 				const cursorCaptureMode = normalizeCursorCaptureMode(payload.cursorCaptureMode);
+				const existingCrop =
+					currentRecordingSession?.screenVideoPath === screenVideoPath
+						? currentRecordingSession.cropRegion
+						: (await loadRecordedSessionForVideoPath(screenVideoPath))?.cropRegion;
 				const session: RecordingSession = {
 					screenVideoPath,
 					webcamVideoPath,
 					createdAt,
 					...(cursorCaptureMode ? { cursorCaptureMode } : {}),
+					...(existingCrop ? { cropRegion: existingCrop } : {}),
 				};
 				setCurrentRecordingSessionState(session);
 				currentProjectPath = null;
@@ -2253,15 +2418,16 @@ export function registerIpcHandlers(
 			await Promise.all(patches);
 		}
 
-		const session: RecordingSession = webcamVideoPath
-			? {
-					screenVideoPath,
-					webcamVideoPath,
-					createdAt,
-					...(cursorCaptureMode ? { cursorCaptureMode } : {}),
-				}
-			: { screenVideoPath, createdAt, ...(cursorCaptureMode ? { cursorCaptureMode } : {}) };
-		setCurrentRecordingSessionState(session);
+		const session = finalizeNewRecordingSession(
+			webcamVideoPath
+				? {
+						screenVideoPath,
+						webcamVideoPath,
+						createdAt,
+						...(cursorCaptureMode ? { cursorCaptureMode } : {}),
+					}
+				: { screenVideoPath, createdAt, ...(cursorCaptureMode ? { cursorCaptureMode } : {}) },
+		);
 		currentProjectPath = null;
 
 		await writePendingCursorTelemetry(screenVideoPath);
@@ -2912,5 +3078,11 @@ export function registerIpcHandlers(
 			normalizeVideoSourcePath(videoPath ?? currentVideoPath),
 		loadCursorRecordingData: readCursorRecordingFile,
 		loadCursorTelemetry: readCursorTelemetryFile,
+	});
+
+	registerAiIpcHandlers({
+		getWindows: () => BrowserWindow.getAllWindows(),
+		approveFilePath,
+		addAllowedReadDir,
 	});
 }

@@ -22,6 +22,9 @@ describe("editor defaults SSOT", () => {
 			webcamMaskShape: DEFAULT_WEBCAM_SETTINGS.maskShape,
 			webcamSizePreset: DEFAULT_WEBCAM_SETTINGS.sizePreset,
 			webcamPosition: DEFAULT_WEBCAM_SETTINGS.position,
+			overlayClips: [],
+			audioClips: [],
+			mediaAssets: [],
 		});
 	});
 

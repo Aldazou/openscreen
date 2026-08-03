@@ -43,6 +43,20 @@ interface Window {
 		}>;
 		selectSource: (source: ProcessedDesktopSource) => Promise<ProcessedDesktopSource | null>;
 		getSelectedSource: () => Promise<ProcessedDesktopSource | null>;
+		openRegionPicker: (displayId?: string) => Promise<{
+			canceled: boolean;
+			region?: { x: number; y: number; width: number; height: number };
+		}>;
+		regionPickerComplete: (payload: {
+			canceled: boolean;
+			region?: { x: number; y: number; width: number; height: number };
+		}) => Promise<{ success: boolean }>;
+		listRecentRecordings: () => Promise<{
+			success: boolean;
+			recordings?: Array<{ path: string; name: string; modifiedAt: number }>;
+			error?: string;
+		}>;
+		copyTextToClipboard: (text: string) => Promise<{ success: boolean; error?: string }>;
 		requestCameraAccess: () => Promise<{
 			success: boolean;
 			granted: boolean;
@@ -292,6 +306,146 @@ interface Window {
 			projectState: unknown;
 			logs: string[];
 		}) => Promise<{ success: boolean; path?: string; canceled?: boolean; error?: string }>;
+
+		// AI Director foundation
+		aiSetApiKey: (
+			provider: import("../src/lib/ai/types").AiProviderId,
+			key: string,
+		) => Promise<{ success: boolean; error?: string }>;
+		aiClearApiKey: (
+			provider: import("../src/lib/ai/types").AiProviderId,
+		) => Promise<{ success: boolean; error?: string }>;
+		aiGetApiKeyStatus: (provider: import("../src/lib/ai/types").AiProviderId) => Promise<{
+			success: boolean;
+			status?: import("../src/lib/ai/types").AiApiKeyStatus;
+			error?: string;
+		}>;
+		aiGetAllApiKeyStatuses: () => Promise<{
+			success: boolean;
+			statuses?: import("../src/lib/ai/types").AiApiKeyStatus[];
+			error?: string;
+		}>;
+		aiListAssets: (projectId: string) => Promise<{
+			success: boolean;
+			assets?: import("../src/lib/ai/types").MediaAsset[];
+			error?: string;
+		}>;
+		aiOpenImportPicker: () => Promise<{
+			canceled: boolean;
+			success: boolean;
+			path?: string;
+			error?: string;
+		}>;
+		aiImportFile: (payload: { projectId: string; sourcePath: string; prompt?: string }) => Promise<{
+			success: boolean;
+			asset?: import("../src/lib/ai/types").MediaAsset;
+			error?: string;
+		}>;
+		aiDeleteAsset: (payload: {
+			projectId: string;
+			assetId: string;
+		}) => Promise<{ success: boolean; error?: string }>;
+		aiEnqueueImportJob: (payload: {
+			kind: "import-file" | "import-url";
+			projectId: string;
+			sourcePath?: string;
+			url?: string;
+			prompt?: string;
+		}) => Promise<{
+			success: boolean;
+			job?: import("../src/lib/ai/types").AiJob;
+			asset?: import("../src/lib/ai/types").MediaAsset;
+			error?: string;
+		}>;
+		aiListJobs: () => Promise<{
+			success: boolean;
+			jobs?: import("../src/lib/ai/types").AiJob[];
+			error?: string;
+		}>;
+		aiGetJob: (jobId: string) => Promise<{
+			success: boolean;
+			job?: import("../src/lib/ai/types").AiJob;
+			error?: string;
+		}>;
+		aiCancelJob: (jobId: string) => Promise<{ success: boolean; error?: string }>;
+		onAiJobProgress: (
+			callback: (payload: { job: import("../src/lib/ai/types").AiJob }) => void,
+		) => () => void;
+		aiListVoices: () => Promise<{
+			success: boolean;
+			voices?: import("../src/lib/ai/types").ElevenLabsVoice[];
+			error?: string;
+		}>;
+		aiGenerateTts: (payload: { projectId: string; text: string; voiceId?: string }) => Promise<{
+			success: boolean;
+			job?: import("../src/lib/ai/types").AiJob;
+			asset?: import("../src/lib/ai/types").MediaAsset;
+			error?: string;
+		}>;
+		aiGenerateMusic: (payload: {
+			projectId: string;
+			prompt: string;
+			lengthMs?: number;
+		}) => Promise<{
+			success: boolean;
+			job?: import("../src/lib/ai/types").AiJob;
+			asset?: import("../src/lib/ai/types").MediaAsset;
+			error?: string;
+		}>;
+		aiGenerateImage: (payload: { projectId: string; prompt: string }) => Promise<{
+			success: boolean;
+			job?: import("../src/lib/ai/types").AiJob;
+			asset?: import("../src/lib/ai/types").MediaAsset;
+			error?: string;
+		}>;
+		aiGenerateVideo: (payload: {
+			projectId: string;
+			prompt: string;
+			durationSec?: 5 | 10;
+		}) => Promise<{
+			success: boolean;
+			job?: import("../src/lib/ai/types").AiJob;
+			asset?: import("../src/lib/ai/types").MediaAsset;
+			error?: string;
+		}>;
+		aiListAvatars: () => Promise<{
+			success: boolean;
+			avatars?: import("../src/lib/ai/types").HeyGenAvatar[];
+			error?: string;
+		}>;
+		aiListHeyGenVoices: () => Promise<{
+			success: boolean;
+			voices?: import("../src/lib/ai/types").HeyGenVoice[];
+			error?: string;
+		}>;
+		aiOpenPhotoAvatarPicker: () => Promise<{
+			canceled: boolean;
+			success: boolean;
+			path?: string;
+			error?: string;
+		}>;
+		aiCreatePhotoAvatar: (payload: { imagePath: string; name?: string }) => Promise<{
+			success: boolean;
+			job?: import("../src/lib/ai/types").AiJob;
+			avatar?: import("../src/lib/ai/types").HeyGenAvatar & { talkingPhotoId?: string };
+			error?: string;
+		}>;
+		aiGenerateAvatar: (payload: {
+			projectId: string;
+			script: string;
+			avatarId?: string;
+			talkingPhotoId?: string;
+			voiceId?: string;
+			photoPath?: string;
+		}) => Promise<{
+			success: boolean;
+			job?: import("../src/lib/ai/types").AiJob;
+			asset?: import("../src/lib/ai/types").MediaAsset;
+			error?: string;
+		}>;
+		aiDirectorTurn: (
+			payload: import("../src/lib/ai/types").DirectorTurnRequest,
+		) => Promise<import("../src/lib/ai/types").DirectorTurnResponse>;
 	};
 }
 
@@ -301,6 +455,8 @@ interface ProcessedDesktopSource {
 	display_id: string;
 	thumbnail: string | null;
 	appIcon: string | null;
+	/** Normalized region crop (0–1) when the user picked an area on a screen. */
+	captureRegion?: { x: number; y: number; width: number; height: number };
 }
 
 interface CursorTelemetryPoint {

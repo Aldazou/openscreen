@@ -126,6 +126,8 @@ export function LaunchWindow() {
 		setWebcamDeviceName,
 		cursorCaptureMode,
 		setCursorCaptureMode,
+		countdownSec,
+		setCountdownSec,
 	} = useScreenRecorder();
 
 	const showMicControls = microphoneEnabled && !recording;
@@ -870,6 +872,25 @@ export function LaunchWindow() {
 						)}
 					</div>
 				</button>
+
+				{!recording && (
+					<Tooltip
+						content={countdownSec > 0 ? t("tooltips.countdownOn") : t("tooltips.countdownOff")}
+					>
+						<button
+							type="button"
+							className={`${hudAuxIconBtnClasses} ${styles.electronNoDrag} ${
+								countdownSec > 0 ? "text-white/70" : "text-white/35"
+							}`}
+							onClick={() => setCountdownSec(countdownSec > 0 ? 0 : 3)}
+							aria-pressed={countdownSec > 0}
+						>
+							<span className="min-w-[1.1rem] text-[10px] font-semibold tabular-nums">
+								{countdownSec > 0 ? "3s" : "0s"}
+							</span>
+						</button>
+					</Tooltip>
+				)}
 
 				{recording && (
 					<div

@@ -212,6 +212,7 @@ export class AudioProcessor {
 	/**
 	 * Two modes: no speed regions uses the fast WebCodecs trim-only pipeline; speed
 	 * regions use the pitch-preserving rendered timeline pipeline.
+	 * When secondary audio clips are present, primary audio is rendered then mixed.
 	 */
 	async process(
 		demuxer: WebDemuxer,
@@ -221,6 +222,10 @@ export class AudioProcessor {
 		speedRegions: SpeedRegion[] | undefined,
 		validatedDurationSec: number,
 		exportCodec: ExportAudioCodec,
+		secondary?: {
+			audioClips?: import("@/lib/ai/types").AudioClip[];
+			mediaAssets?: import("@/lib/ai/types").MediaAsset[];
+		},
 	): Promise<void> {
 		const sortedTrims = trimRegions ? [...trimRegions].sort((a, b) => a.startMs - b.startMs) : [];
 		const sortedSpeedRegions = speedRegions
@@ -229,16 +234,37 @@ export class AudioProcessor {
 					.sort((a, b) => a.startMs - b.startMs)
 			: [];
 
+		const hasSecondary = Boolean(secondary?.audioClips?.length && secondary?.mediaAssets?.length);
+
 		// Speed edits need timeline playback to preserve pitch.
-		if (sortedSpeedRegions.length > 0) {
-			const renderedAudioBlob = await this.renderPitchPreservedTimelineAudio(
-				videoUrl,
-				sortedTrims,
-				sortedSpeedRegions,
-				validatedDurationSec,
-			);
-			if (!this.cancelled && renderedAudioBlob.size > 0) {
-				await this.muxRenderedAudioBlob(renderedAudioBlob, muxer, exportCodec);
+		// Secondary beds also use this path so we can OfflineAudioContext-mix afterward.
+		if (sortedSpeedRegions.length > 0 || hasSecondary) {
+			let renderedAudioBlob = new Blob();
+			try {
+				renderedAudioBlob = await this.renderPitchPreservedTimelineAudio(
+					videoUrl,
+					sortedTrims,
+					sortedSpeedRegions,
+					validatedDurationSec,
+				);
+			} catch (error) {
+				if (!hasSecondary) throw error;
+				console.warn("[AudioProcessor] Primary audio render failed; mixing secondary only:", error);
+			}
+			if (this.cancelled) return;
+
+			let finalBlob = renderedAudioBlob;
+			if (hasSecondary) {
+				finalBlob = await this.mixSecondaryAudioOntoBlob(
+					renderedAudioBlob.size > 0 ? renderedAudioBlob : null,
+					secondary!.audioClips!,
+					secondary!.mediaAssets!,
+					validatedDurationSec,
+				);
+			}
+
+			if (!this.cancelled && finalBlob.size > 0) {
+				await this.muxRenderedAudioBlob(finalBlob, muxer, exportCodec);
 				return;
 			}
 			return;
@@ -249,6 +275,89 @@ export class AudioProcessor {
 		// the validated duration boundary.
 		const readEndSec = validatedDurationSec + 0.5;
 		await this.processTrimOnlyAudio(demuxer, muxer, sortedTrims, readEndSec, exportCodec);
+	}
+
+	/** Mix music/TTS clips onto a rendered primary audio blob via OfflineAudioContext. */
+	private async mixSecondaryAudioOntoBlob(
+		primaryBlob: Blob | null,
+		audioClips: import("@/lib/ai/types").AudioClip[],
+		mediaAssets: import("@/lib/ai/types").MediaAsset[],
+		durationSec: number,
+	): Promise<Blob> {
+		const { decodeAudioFileToBuffer, mixTimelineAudio, resolveAudioClipsWithAssets } = await import(
+			"@/lib/ai/audioMix"
+		);
+		const { toFileUrl } = await import("@/components/video-editor/projectPersistence");
+
+		const primaryCtx = new AudioContext();
+		try {
+			let primaryBuffer: AudioBuffer | null = null;
+			if (primaryBlob && primaryBlob.size > 0) {
+				try {
+					primaryBuffer = await primaryCtx.decodeAudioData(await primaryBlob.arrayBuffer());
+				} catch (error) {
+					console.warn("[AudioProcessor] Failed to decode primary audio for mix:", error);
+				}
+			}
+
+			const resolved = resolveAudioClipsWithAssets(audioClips, mediaAssets);
+			const clipInputs = [];
+			for (const { clip, asset } of resolved) {
+				const url =
+					asset.path.startsWith("file:") || asset.path.startsWith("http")
+						? asset.path
+						: toFileUrl(asset.path);
+				try {
+					const buffer = await decodeAudioFileToBuffer(url, primaryCtx);
+					clipInputs.push({ clip, asset, buffer });
+				} catch (error) {
+					console.warn("[AudioProcessor] Failed to decode secondary clip:", error);
+				}
+			}
+
+			if (clipInputs.length === 0) {
+				return primaryBlob ?? new Blob();
+			}
+
+			const mixed = await mixTimelineAudio({
+				primary: primaryBuffer,
+				clips: clipInputs,
+				durationSec: Math.max(durationSec, primaryBuffer?.duration ?? 0.05),
+				sampleRate: primaryBuffer?.sampleRate ?? 48_000,
+			});
+			if (!mixed) return primaryBlob ?? new Blob();
+
+			return this.recordAudioBufferToBlob(mixed);
+		} finally {
+			await primaryCtx.close().catch(() => undefined);
+		}
+	}
+
+	private async recordAudioBufferToBlob(buffer: AudioBuffer): Promise<Blob> {
+		const live = new AudioContext({ sampleRate: buffer.sampleRate });
+		try {
+			if (live.state === "suspended") {
+				await live.resume();
+			}
+			const destination = live.createMediaStreamDestination();
+			const source = live.createBufferSource();
+			source.buffer = buffer;
+			source.connect(destination);
+			const { recorder, recordedBlobPromise } = this.startAudioRecording(destination.stream);
+			await new Promise<void>((resolve, reject) => {
+				source.onended = () => resolve();
+				try {
+					source.start(0);
+				} catch (error) {
+					reject(error);
+				}
+			});
+			await new Promise((r) => setTimeout(r, 40));
+			recorder.stop();
+			return await recordedBlobPromise;
+		} finally {
+			await live.close().catch(() => undefined);
+		}
 	}
 
 	// Trim-only path, used for projects without speed regions.

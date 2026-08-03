@@ -53,6 +53,7 @@ import {
 	DEFAULT_EDITOR_LAYOUT_SETTINGS,
 	DEFAULT_SOURCE_DIMENSIONS,
 } from "./editorDefaults";
+import { OverlayPreviewLayer } from "./OverlayPreviewLayer";
 import {
 	type AnnotationRegion,
 	type BlurData,
@@ -148,6 +149,9 @@ interface VideoPlaybackProps {
 	// Render the selected zoom at the playhead even while paused, so the editor can
 	// preview the effect without leaving the focus-edit view.
 	isPreviewingZoom?: boolean;
+	/** AI / imported visual overlays composited over the preview. */
+	overlayClips?: import("@/lib/ai/types").OverlayClip[];
+	mediaAssets?: import("@/lib/ai/types").MediaAsset[];
 }
 
 export interface VideoPlaybackRef {
@@ -273,6 +277,8 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 			cursorClipToBounds = DEFAULT_CURSOR_SETTINGS.clipToBounds,
 			cursorTheme = DEFAULT_CURSOR_SETTINGS.theme,
 			isPreviewingZoom = false,
+			overlayClips = [],
+			mediaAssets = [],
 		},
 		ref,
 	) => {
@@ -1908,6 +1914,13 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 						...backgroundStyle,
 						filter: showBlur ? "blur(2px)" : "none",
 					}}
+				/>
+				<OverlayPreviewLayer
+					clips={overlayClips}
+					assets={mediaAssets}
+					currentTimeSec={currentTime}
+					width={overlaySize.width}
+					height={overlaySize.height}
 				/>
 				<div
 					ref={composite3DRef}

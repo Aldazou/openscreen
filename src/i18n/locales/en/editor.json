@@ -65,17 +65,20 @@
 	},
 	"emptyState": {
 		"title": "No project open",
-		"description": "Import a video to start editing, or load an existing OpenScreen project.",
+		"description": "Record a new demo, import a video, or open a recent project.",
+		"recordButton": "New Recording",
 		"importVideoButton": "Import Video File…",
 		"loadProjectButton": "Load Project…",
+		"recentProjects": "Recent projects",
+		"recentRecordings": "Recent recordings",
 		"supportedFormats": "Supported formats: MP4, MOV, WebM, MKV, AVI, M4V, WMV",
-		"dragDropHint": "or drag & drop a .openscreen project file here",
-		"dropOverlay": "Drop project file to open",
+		"dragDropHint": "or drag & drop a video or .openscreen project here",
+		"dropOverlay": "Drop video or project to open",
 		"dropErrors": {
 			"unsupportedFormatTitle": "Unsupported Format",
-			"unsupportedFormatMessage": "Only .openscreen project files can be dropped here. To import a video file, use the \"Import Video File…\" button on this screen.",
+			"unsupportedFormatMessage": "Drop a video file (MP4, MOV, WebM, …) or a .openscreen project. You can also use the buttons above.",
 			"couldNotOpenTitle": "Could Not Open File",
-			"couldNotOpenMessage": "The project file could not be opened. The video it references may have been moved or deleted."
+			"couldNotOpenMessage": "The file could not be opened. It may have been moved or deleted."
 		}
 	}
 }

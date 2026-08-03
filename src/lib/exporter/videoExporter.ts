@@ -1,3 +1,4 @@
+import { toFileUrl } from "@/components/video-editor/projectPersistence";
 import type {
 	AnnotationRegion,
 	CropRegion,
@@ -7,6 +8,11 @@ import type {
 	WebcamSizePreset,
 	ZoomRegion,
 } from "@/components/video-editor/types";
+import {
+	activeOverlayClips,
+	computeOverlayRect,
+	overlaySourceTimeSec,
+} from "@/lib/ai/overlayLayout";
 import { BackgroundLoadError } from "@/lib/wallpaper";
 import type { CursorRecordingData } from "@/native/contracts";
 import { getPlatform } from "@/utils/platformUtils";
@@ -53,6 +59,11 @@ export interface VideoExporterConfig extends ExportConfig {
 	previewHeight?: number;
 	cursorTelemetry?: import("@/components/video-editor/types").CursorTelemetryPoint[];
 	cursorClickTimestamps?: number[];
+	/** AI Director secondary visual overlays. */
+	overlayClips?: import("@/lib/ai/types").OverlayClip[];
+	mediaAssets?: import("@/lib/ai/types").MediaAsset[];
+	/** AI Director secondary audio beds mixed into export. */
+	audioClips?: import("@/lib/ai/types").AudioClip[];
 	onProgress?: (progress: ExportProgress) => void;
 }
 
@@ -119,6 +130,8 @@ export function getSourceCopyFastPathBlockers(
 	}
 	if (config.showBlur) blockers.push("background blur is enabled");
 	if ((config.motionBlurAmount ?? 0) > SOURCE_COPY_EPSILON) blockers.push("motion blur is enabled");
+	if ((config.overlayClips?.length ?? 0) > 0) blockers.push("AI overlay clips are present");
+	if ((config.audioClips?.length ?? 0) > 0) blockers.push("secondary audio clips are present");
 
 	return blockers;
 }
@@ -144,6 +157,8 @@ export class VideoExporter {
 	private muxer: VideoMuxer | null = null;
 	private audioProcessor: AudioProcessor | null = null;
 	private webcamDecoder: StreamingVideoDecoder | null = null;
+	private overlayImageCache = new Map<string, HTMLImageElement>();
+	private overlayVideoCache = new Map<string, HTMLVideoElement>();
 	private cancelled = false;
 	private encodeQueue = 0;
 	// Keep a smaller queue for software encoding so Windows does not balloon memory.
@@ -270,11 +285,15 @@ export class VideoExporter {
 			await this.initializeEncoder(encoderPreference);
 
 			const sourceDemuxer = streamingDecoder.getDemuxer();
-			const audioExportCodec =
+			const hasSecondaryAudio = Boolean(this.config.audioClips?.length);
+			let audioExportCodec =
 				videoInfo.hasAudio && sourceDemuxer
 					? await AudioProcessor.selectSupportedExportCodecForSource(sourceDemuxer)
 					: null;
-			if (videoInfo.hasAudio && !audioExportCodec) {
+			if (!audioExportCodec && hasSecondaryAudio) {
+				audioExportCodec = await AudioProcessor.selectSupportedExportCodec(48_000, 2);
+			}
+			if ((videoInfo.hasAudio || hasSecondaryAudio) && !audioExportCodec) {
 				console.warn("[VideoExporter] No supported audio export codec, exporting video-only.");
 			}
 
@@ -359,6 +378,7 @@ export class VideoExporter {
 						await renderer.renderFrame(videoFrame, sourceTimestampUs, webcamFrame);
 
 						const canvas = renderer.getCanvas();
+						await this.drawOverlayClips(canvas, sourceTimestampMs);
 
 						let exportFrame: VideoFrame;
 
@@ -476,6 +496,10 @@ export class VideoExporter {
 						this.config.speedRegions,
 						videoInfo.duration,
 						audioExportCodec,
+						{
+							audioClips: this.config.audioClips,
+							mediaAssets: this.config.mediaAssets,
+						},
 					);
 				}
 			}
@@ -725,6 +749,117 @@ export class VideoExporter {
 
 	private reportProgress(progress: ExportProgress): void {
 		this.config.onProgress?.(progress);
+	}
+
+	private assetFileUrl(pathValue: string): string {
+		if (
+			pathValue.startsWith("file:") ||
+			pathValue.startsWith("http") ||
+			pathValue.startsWith("blob:")
+		) {
+			return pathValue;
+		}
+		return toFileUrl(pathValue);
+	}
+
+	private async loadOverlayImage(assetId: string, pathValue: string): Promise<HTMLImageElement> {
+		const cached = this.overlayImageCache.get(assetId);
+		if (cached?.complete) return cached;
+		const img = new Image();
+		img.decoding = "async";
+		const url = this.assetFileUrl(pathValue);
+		await new Promise<void>((resolve, reject) => {
+			img.onload = () => resolve();
+			img.onerror = () => reject(new Error(`Failed to load overlay image ${assetId}`));
+			img.src = url;
+		});
+		this.overlayImageCache.set(assetId, img);
+		return img;
+	}
+
+	private async loadOverlayVideo(
+		assetId: string,
+		pathValue: string,
+		sourceTimeSec: number,
+	): Promise<HTMLVideoElement | null> {
+		let video = this.overlayVideoCache.get(assetId);
+		if (!video) {
+			video = document.createElement("video");
+			video.muted = true;
+			video.playsInline = true;
+			video.preload = "auto";
+			video.src = this.assetFileUrl(pathValue);
+			this.overlayVideoCache.set(assetId, video);
+			await new Promise<void>((resolve, reject) => {
+				video!.onloadedmetadata = () => resolve();
+				video!.onerror = () => reject(new Error(`Failed to load overlay video ${assetId}`));
+			}).catch(() => undefined);
+		}
+		if (!Number.isFinite(video.duration)) return null;
+		const target = Math.min(Math.max(0, sourceTimeSec), Math.max(0, video.duration - 0.05));
+		if (Math.abs(video.currentTime - target) > 0.04) {
+			await new Promise<void>((resolve) => {
+				const onSeeked = () => {
+					video!.removeEventListener("seeked", onSeeked);
+					resolve();
+				};
+				video!.addEventListener("seeked", onSeeked);
+				try {
+					video!.currentTime = target;
+				} catch {
+					resolve();
+				}
+			});
+		}
+		return video;
+	}
+
+	/** Composites AI/imported overlay clips onto the rendered export canvas. */
+	private async drawOverlayClips(canvas: HTMLCanvasElement, timelineMs: number): Promise<void> {
+		const clips = this.config.overlayClips;
+		const assets = this.config.mediaAssets;
+		if (!clips?.length || !assets?.length) return;
+
+		const active = activeOverlayClips(clips, timelineMs);
+		if (active.length === 0) return;
+
+		const ctx = canvas.getContext("2d");
+		if (!ctx) return;
+		const assetsById = new Map(assets.map((a) => [a.id, a]));
+
+		for (const clip of active) {
+			const asset = assetsById.get(clip.assetId);
+			if (!asset) continue;
+			const aspect =
+				asset.width && asset.height && asset.height > 0 ? asset.width / asset.height : 16 / 9;
+			const rect = computeOverlayRect(
+				canvas.width,
+				canvas.height,
+				clip.layout,
+				clip.sizePercent,
+				aspect,
+			);
+			ctx.save();
+			ctx.globalAlpha = Math.min(1, Math.max(0, clip.opacity));
+			try {
+				if (asset.mimeType.startsWith("image/") || asset.type === "ai-image") {
+					const img = await this.loadOverlayImage(asset.id, asset.path);
+					ctx.drawImage(img, rect.x, rect.y, rect.width, rect.height);
+				} else if (asset.mimeType.startsWith("video/") || asset.type === "ai-video") {
+					const video = await this.loadOverlayVideo(
+						asset.id,
+						asset.path,
+						overlaySourceTimeSec(clip, timelineMs),
+					);
+					if (video) {
+						ctx.drawImage(video, rect.x, rect.y, rect.width, rect.height);
+					}
+				}
+			} catch (error) {
+				console.warn("[VideoExporter] Overlay draw failed:", error);
+			}
+			ctx.restore();
+		}
 	}
 
 	private withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {

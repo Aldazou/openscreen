@@ -1,5 +1,5 @@
 import type { Span } from "dnd-timeline";
-import { FolderOpen, HelpCircle, Languages, Save, Video } from "lucide-react";
+import { FolderOpen, HelpCircle, Languages, Save, Sparkles, Video } from "lucide-react";
 import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { toast } from "sonner";
@@ -57,6 +57,7 @@ import {
 	getProjectFolder,
 	loadUserPreferences,
 	parentDirectoryOf,
+	rememberRecentProject,
 	saveUserPreferences,
 } from "@/lib/userPreferences";
 import { BackgroundLoadError } from "@/lib/wallpaper";
@@ -67,6 +68,7 @@ import {
 	getNativeAspectRatioValue,
 	isPortraitAspectRatio,
 } from "@/utils/aspectRatioUtils";
+import { AiDirectorDialog } from "./AiDirectorDialog";
 import { EditorEmptyState } from "./EditorEmptyState";
 import { ExportDialog } from "./ExportDialog";
 import {
@@ -88,6 +90,7 @@ import {
 	toFileUrl,
 	validateProjectData,
 } from "./projectPersistence";
+import { SecondaryAudioPreview } from "./SecondaryAudioPreview";
 import { SettingsPanel } from "./SettingsPanel";
 import TimelineEditor from "./timeline/TimelineEditor";
 import { buildAutoZoomSuggestions } from "./timeline/zoomSuggestionUtils";
@@ -210,6 +213,9 @@ export default function VideoEditor() {
 		webcamReactiveZoom,
 		webcamSizePreset,
 		webcamPosition,
+		overlayClips,
+		audioClips,
+		mediaAssets,
 	} = editorState;
 
 	// Non-undoable state
@@ -314,6 +320,17 @@ export default function VideoEditor() {
 	const { locale, setLocale, t: rawT } = useI18n();
 	const t = useScopedT("editor");
 	const ts = useScopedT("settings");
+	const cursorUnavailableMessage =
+		nativePlatform === "linux"
+			? ts("cursor.linuxUnavailable")
+			: recordingCursorCaptureMode === "system"
+				? ts("cursor.systemCursorRecording")
+				: nativePlatform &&
+						(nativePlatform === "win32" || nativePlatform === "darwin") &&
+						recordingCursorCaptureMode === "editable-overlay" &&
+						!hasNativeCursorRecordingData(cursorRecordingData)
+					? ts("cursor.noCursorData")
+					: null;
 	const availableLocales = getAvailableLocales();
 
 	const nextAnnotationIdRef = useRef(1);
@@ -394,6 +411,9 @@ export default function VideoEditor() {
 			setWebcamVideoPath(webcamSourcePath ? toFileUrl(webcamSourcePath) : null);
 			setRecordingCursorCaptureMode(projectCursorCaptureMode);
 			setCurrentProjectPath(path ?? null);
+			if (path) {
+				rememberRecentProject(path);
+			}
 
 			// A loaded project keeps its zooms exactly as saved, so never auto-suggest
 			// over it (even if it has zero zooms because the user deleted them all).
@@ -421,6 +441,9 @@ export default function VideoEditor() {
 				webcamReactiveZoom: normalizedEditor.webcamReactiveZoom,
 				webcamSizePreset: normalizedEditor.webcamSizePreset,
 				webcamPosition: normalizedEditor.webcamPosition,
+				overlayClips: normalizedEditor.overlayClips,
+				audioClips: normalizedEditor.audioClips,
+				mediaAssets: normalizedEditor.mediaAssets,
 			});
 			setExportQuality(normalizedEditor.exportQuality);
 			setExportFormat(normalizedEditor.exportFormat);
@@ -504,10 +527,16 @@ export default function VideoEditor() {
 			gifLoop,
 			gifSizePreset,
 			cursorTheme,
+			overlayClips,
+			audioClips,
+			mediaAssets,
 		});
 	}, [
 		currentProjectMedia,
 		cursorTheme,
+		overlayClips,
+		audioClips,
+		mediaAssets,
 		wallpaper,
 		shadowIntensity,
 		showBlur,
@@ -565,6 +594,13 @@ export default function VideoEditor() {
 					setWebcamVideoPath(webcamSourcePath ? toFileUrl(webcamSourcePath) : null);
 					setRecordingCursorCaptureMode(session.cursorCaptureMode ?? null);
 					setCurrentProjectPath(null);
+					const seededEditor = {
+						...INITIAL_EDITOR_STATE,
+						...(session.cropRegion ? { cropRegion: session.cropRegion } : {}),
+					};
+					if (session.cropRegion) {
+						pushState({ cropRegion: session.cropRegion });
+					}
 					setLastSavedSnapshot(
 						createProjectSnapshot(
 							{
@@ -574,7 +610,7 @@ export default function VideoEditor() {
 									? { cursorCaptureMode: session.cursorCaptureMode }
 									: {}),
 							},
-							INITIAL_EDITOR_STATE,
+							seededEditor,
 						),
 					);
 					return;
@@ -600,7 +636,7 @@ export default function VideoEditor() {
 		}
 
 		loadInitialData();
-	}, [applyLoadedProject]);
+	}, [applyLoadedProject, pushState]);
 
 	// Avoid overwriting saved prefs with defaults before they've loaded.
 	const [prefsHydrated, setPrefsHydrated] = useState(false);
@@ -663,6 +699,9 @@ export default function VideoEditor() {
 				gifLoop,
 				gifSizePreset,
 				cursorTheme,
+				overlayClips,
+				audioClips,
+				mediaAssets,
 			};
 			const projectData = createProjectData(currentProjectMedia, editorState);
 
@@ -692,6 +731,7 @@ export default function VideoEditor() {
 
 			if (result.path) {
 				setCurrentProjectPath(result.path);
+				rememberRecentProject(result.path);
 			}
 			setLastSavedSnapshot(projectSnapshot);
 
@@ -728,6 +768,9 @@ export default function VideoEditor() {
 			gifLoop,
 			gifSizePreset,
 			cursorTheme,
+			overlayClips,
+			audioClips,
+			mediaAssets,
 			videoPath,
 			t,
 		],
@@ -2014,6 +2057,9 @@ export default function VideoEditor() {
 						previewHeight,
 						cursorTelemetry,
 						cursorClickTimestamps,
+						overlayClips,
+						mediaAssets,
+						audioClips,
 						onProgress: (progress: ExportProgress) => {
 							setExportProgress(progress);
 						},
@@ -2124,6 +2170,9 @@ export default function VideoEditor() {
 			cursorClickBounce,
 			cursorClipToBounds,
 			cursorTheme,
+			overlayClips,
+			mediaAssets,
+			audioClips,
 			t,
 		],
 	);
@@ -2532,6 +2581,53 @@ export default function VideoEditor() {
 						<Save size={14} />
 						{ts("project.save")}
 					</button>
+					<AiDirectorDialog
+						projectId={
+							currentProjectPath
+								? currentProjectPath.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-64)
+								: videoSourcePath
+									? videoSourcePath.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-64)
+									: "scratch"
+						}
+						playheadMs={currentTime * 1000}
+						durationMs={duration * 1000}
+						hasVideo={Boolean(videoPath)}
+						mediaAssets={mediaAssets}
+						overlayCount={overlayClips.length}
+						audioCount={audioClips.length}
+						onMediaAssetsChange={(assets) => pushState({ mediaAssets: assets })}
+						onAddOverlayClip={(clip) =>
+							pushState((prev) => ({ overlayClips: [...prev.overlayClips, clip] }))
+						}
+						onAddAudioClip={(clip) =>
+							pushState((prev) => ({ audioClips: [...prev.audioClips, clip] }))
+						}
+						onSetDucking={(duckUnderVoice, assetId) =>
+							pushState((prev) => ({
+								audioClips: prev.audioClips.map((clip) => {
+									if (assetId && clip.assetId !== assetId) return clip;
+									if (!assetId && clip.kind === "tts") return clip;
+									return { ...clip, duckUnderVoice };
+								}),
+							}))
+						}
+						onGenerateCaptions={(wordsMin, wordsMax) => {
+							void generateAutoCaptions(wordsMin ?? captionWordsMin, wordsMax ?? captionWordsMax);
+						}}
+						onExport={(format) => {
+							if (format) setExportFormat(format);
+							handleOpenExportDialog();
+						}}
+						trigger={
+							<button
+								type="button"
+								className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-white/50 hover:text-white/90 hover:bg-white/[0.08] transition-all duration-150 text-[11px] font-medium"
+							>
+								<Sparkles size={14} className="text-[#34B27B]" />
+								AI
+							</button>
+						}
+					/>
 					<GettingStartedGuide
 						trigger={
 							<button
@@ -2656,6 +2752,14 @@ export default function VideoEditor() {
 													cursorClipToBounds={cursorClipToBounds}
 													cursorTheme={cursorTheme}
 													isPreviewingZoom={isPreviewingZoom}
+													overlayClips={overlayClips}
+													mediaAssets={mediaAssets}
+												/>
+												<SecondaryAudioPreview
+													clips={audioClips}
+													assets={mediaAssets}
+													currentTimeSec={currentTime}
+													isPlaying={isPlaying}
 												/>
 											</div>
 										</div>
@@ -2680,6 +2784,22 @@ export default function VideoEditor() {
 									<SettingsPanel
 										selected={wallpaper}
 										onWallpaperChange={(w) => pushState({ wallpaper: w })}
+										aiProjectId={
+											currentProjectPath
+												? currentProjectPath.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-64)
+												: videoSourcePath
+													? videoSourcePath.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-64)
+													: "scratch"
+										}
+										playheadMs={currentTime * 1000}
+										mediaAssets={mediaAssets}
+										onMediaAssetsChange={(assets) => pushState({ mediaAssets: assets })}
+										onAddOverlayClip={(clip) =>
+											pushState((prev) => ({ overlayClips: [...prev.overlayClips, clip] }))
+										}
+										onAddAudioClip={(clip) =>
+											pushState((prev) => ({ audioClips: [...prev.audioClips, clip] }))
+										}
 										selectedZoomDepth={
 											selectedZoomId
 												? zoomRegions.find((z) => z.id === selectedZoomId)?.depth
@@ -2849,6 +2969,7 @@ export default function VideoEditor() {
 											hasNativeCursorRecordingData(cursorRecordingData)
 										}
 										showCursorSettings={showCursorSettings}
+										cursorUnavailableMessage={cursorUnavailableMessage}
 									/>
 								</div>
 							</div>

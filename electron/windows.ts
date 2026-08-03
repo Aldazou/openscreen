@@ -269,6 +269,54 @@ export function createSourceSelectorWindow(): BrowserWindow {
 }
 
 /**
+ * Full-screen transparent overlay for drawing a capture region on a display.
+ */
+export function createRegionPickerWindow(bounds: Electron.Rectangle): BrowserWindow {
+	const win = new BrowserWindow({
+		x: Math.round(bounds.x),
+		y: Math.round(bounds.y),
+		width: Math.round(bounds.width),
+		height: Math.round(bounds.height),
+		frame: false,
+		resizable: false,
+		movable: false,
+		alwaysOnTop: true,
+		skipTaskbar: true,
+		focusable: true,
+		transparent: true,
+		backgroundColor: "#00000000",
+		hasShadow: false,
+		fullscreenable: false,
+		show: false,
+		webPreferences: {
+			preload: path.join(__dirname, "preload.mjs"),
+			additionalArguments: [ASSET_BASE_URL_ARG],
+			nodeIntegration: false,
+			contextIsolation: true,
+			backgroundThrottling: false,
+		},
+	});
+
+	if (process.platform === "darwin") {
+		win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+	}
+
+	if (VITE_DEV_SERVER_URL) {
+		win.loadURL(VITE_DEV_SERVER_URL + "?windowType=region-picker");
+	} else {
+		win.loadFile(path.join(RENDERER_DIST, "index.html"), {
+			query: { windowType: "region-picker" },
+		});
+	}
+
+	win.once("ready-to-show", () => {
+		if (!win.isDestroyed()) win.show();
+	});
+
+	return win;
+}
+
+/**
  * Centered transparent countdown overlay that sits above the HUD during
  * recording pre-roll.
  */

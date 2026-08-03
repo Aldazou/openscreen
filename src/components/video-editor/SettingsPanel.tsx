@@ -42,6 +42,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useScopedT } from "@/contexts/I18nContext";
+import type { AudioClip, MediaAsset, OverlayClip } from "@/lib/ai/types";
 import { getAssetPath } from "@/lib/assetPath";
 import { WEBCAM_LAYOUT_PRESETS } from "@/lib/compositeLayout";
 import { CURSOR_THEMES, DEFAULT_CURSOR_THEME_ID } from "@/lib/cursor/cursorThemes";
@@ -56,6 +57,8 @@ import { resolveImageWallpaperUrl, WALLPAPER_PATHS } from "@/lib/wallpaper";
 import { type AspectRatio, isPortraitAspectRatio } from "@/utils/aspectRatioUtils";
 import { getTestId } from "@/utils/getTestId";
 import ColorPicker from "../ui/color-picker";
+import { AiGeneratePanel } from "./AiGeneratePanel";
+import { AiSettingsPanel } from "./AiSettingsPanel";
 import { AnnotationSettingsPanel } from "./AnnotationSettingsPanel";
 import { BlurSettingsPanel } from "./BlurSettingsPanel";
 import { BACKGROUND_IMAGE_ACCEPT, isSupportedBackgroundImageType } from "./backgroundImageUpload";
@@ -71,6 +74,7 @@ import {
 } from "./editorDefaults";
 import { BLUR_REGIONS_ENABLED } from "./featureFlags";
 import { KeyboardShortcutsHelp } from "./KeyboardShortcutsHelp";
+import { MediaLibraryPanel } from "./MediaLibraryPanel";
 import type {
 	AnnotationRegion,
 	AnnotationType,
@@ -296,6 +300,13 @@ interface SettingsPanelProps {
 	gifOutputDimensions?: { width: number; height: number };
 	onExport?: () => void;
 	onExportPanelOpen?: () => void;
+	/** AI Director: media library project scope id */
+	aiProjectId?: string;
+	playheadMs?: number;
+	mediaAssets?: MediaAsset[];
+	onMediaAssetsChange?: (assets: MediaAsset[]) => void;
+	onAddOverlayClip?: (clip: OverlayClip) => void;
+	onAddAudioClip?: (clip: AudioClip) => void;
 	unsavedExport?: {
 		arrayBuffer: ArrayBuffer;
 		fileName: string;
@@ -348,6 +359,8 @@ interface SettingsPanelProps {
 	onCursorThemeChange?: (theme: string) => void;
 	hasCursorData?: boolean;
 	showCursorSettings?: boolean;
+	/** When set, Cursor tab stays visible but shows this explanation instead of controls. */
+	cursorUnavailableMessage?: string | null;
 }
 
 export default SettingsPanel;
@@ -361,7 +374,14 @@ const ZOOM_DEPTH_OPTIONS: Array<{ depth: ZoomDepth; label: string }> = [
 	{ depth: 6, label: "5×" },
 ];
 
-type SettingsPanelMode = "background" | "effects" | "layout" | "cursor" | "export" | "timeline";
+type SettingsPanelMode =
+	| "background"
+	| "effects"
+	| "layout"
+	| "cursor"
+	| "export"
+	| "timeline"
+	| "ai";
 
 const MP4_EXPORT_SHORT_SIDES = {
 	medium: 720,
@@ -436,6 +456,12 @@ export function SettingsPanel({
 	gifOutputDimensions = DEFAULT_GIF_SETTINGS.outputDimensions,
 	onExport,
 	onExportPanelOpen,
+	aiProjectId = "scratch",
+	playheadMs = 0,
+	mediaAssets = [],
+	onMediaAssetsChange,
+	onAddOverlayClip,
+	onAddAudioClip,
 	unsavedExport,
 	onSaveUnsavedExport,
 	selectedAnnotationId,
@@ -484,6 +510,7 @@ export function SettingsPanel({
 	onCursorThemeChange,
 	hasCursorData = false,
 	showCursorSettings = true,
+	cursorUnavailableMessage = null,
 }: SettingsPanelProps) {
 	const t = useScopedT("settings");
 	const [activePanelMode, setActivePanelMode] = useState<SettingsPanelMode>("background");
@@ -640,7 +667,7 @@ export function SettingsPanel({
 	const zoomEnabled = Boolean(selectedZoomDepth);
 	const trimEnabled = Boolean(selectedTrimId);
 	const hasTimelineSelection = Boolean(selectedZoomId || selectedTrimId || selectedSpeedId);
-	const hasCursorPanel = showCursorSettings && hasCursorData;
+	const hasCursorPanel = (showCursorSettings && hasCursorData) || Boolean(cursorUnavailableMessage);
 	const panelModes: Array<{
 		id: SettingsPanelMode;
 		label: string;
@@ -651,11 +678,12 @@ export function SettingsPanel({
 		{ id: "effects", label: t("effects.title"), icon: SlidersHorizontal },
 		{ id: "layout", label: t("layout.title"), icon: LayoutPanelTop, disabled: !hasWebcam },
 		{ id: "timeline", label: t("timeline.title"), icon: Brackets },
+		{ id: "ai", label: "AI", icon: Sparkles },
 		...(hasCursorPanel
 			? [
 					{
 						id: "cursor" as const,
-						label: t("effects.title"),
+						label: t("cursor.title"),
 						icon: MousePointerClick,
 					},
 				]
@@ -674,8 +702,10 @@ export function SettingsPanel({
 				: t("trim.deleteRegion")
 		: activePanelMode === "timeline"
 			? t("timeline.title")
-			: ([...panelModes, exportPanelMode].find((mode) => mode.id === activePanelMode)?.label ??
-				t("background.title"));
+			: activePanelMode === "ai"
+				? "AI Director"
+				: ([...panelModes, exportPanelMode].find((mode) => mode.id === activePanelMode)?.label ??
+					t("background.title"));
 
 	const handleDeleteClick = () => {
 		if (selectedZoomId && onZoomDelete) {
@@ -1436,7 +1466,9 @@ export function SettingsPanel({
 											) : (
 												<SlidersHorizontal className="w-4 h-4 text-[#34B27B]" />
 											)}
-											<span className="text-xs font-medium">{t("effects.title")}</span>
+											<span className="text-xs font-medium">
+												{activePanelMode === "cursor" ? t("cursor.title") : t("effects.title")}
+											</span>
 										</div>
 									</AccordionTrigger>
 									<AccordionContent className="pb-3">
@@ -1540,6 +1572,14 @@ export function SettingsPanel({
 												</div>
 											</>
 										)}
+
+										{activePanelMode === "cursor" &&
+											cursorUnavailableMessage &&
+											!(showCursorSettings && hasCursorData) && (
+												<div className="mt-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-[11px] leading-relaxed text-amber-100/90">
+													{cursorUnavailableMessage}
+												</div>
+											)}
 
 										{activePanelMode === "cursor" && showCursorSettings && hasCursorData && (
 											<div className="p-2 rounded-lg editor-control-surface mt-2 space-y-3">
@@ -1866,6 +1906,36 @@ export function SettingsPanel({
 								</AccordionItem>
 							)}
 						</Accordion>
+					)}
+					{!hasTimelineSelection && activePanelMode === "ai" && (
+						<div className="space-y-5 pb-4">
+							{onMediaAssetsChange ? (
+								<AiGeneratePanel
+									projectId={aiProjectId}
+									onAssetReady={(asset) => {
+										onMediaAssetsChange([asset, ...mediaAssets.filter((a) => a.id !== asset.id)]);
+									}}
+								/>
+							) : null}
+							{onMediaAssetsChange && onAddOverlayClip && onAddAudioClip ? (
+								<MediaLibraryPanel
+									projectId={aiProjectId}
+									playheadMs={playheadMs}
+									mediaAssets={mediaAssets}
+									onMediaAssetsChange={onMediaAssetsChange}
+									onAddOverlayClip={onAddOverlayClip}
+									onAddAudioClip={onAddAudioClip}
+								/>
+							) : null}
+							<details className="rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+								<summary className="cursor-pointer text-xs font-medium text-slate-400">
+									API keys
+								</summary>
+								<div className="mt-3">
+									<AiSettingsPanel />
+								</div>
+							</details>
+						</div>
 					)}
 				</div>
 			</div>

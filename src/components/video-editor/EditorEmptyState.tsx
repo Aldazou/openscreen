@@ -1,8 +1,15 @@
-import { AlertCircle, Film, FolderOpen, Upload, X } from "lucide-react";
-import { useCallback, useRef, useState } from "react";
+import { AlertCircle, Clapperboard, Film, FolderOpen, History, Upload, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useScopedT } from "@/contexts/I18nContext";
-import { getProjectFolder, parentDirectoryOf, saveUserPreferences } from "@/lib/userPreferences";
+import { isVideoFileName, type RecentRecordingEntry } from "@/lib/recentItems";
+import {
+	getProjectFolder,
+	loadUserPreferences,
+	parentDirectoryOf,
+	rememberRecentProject,
+	saveUserPreferences,
+} from "@/lib/userPreferences";
 import { nativeBridgeClient } from "@/native";
 import { GettingStartedGuide } from "./GettingStartedGuide";
 
@@ -19,6 +26,8 @@ export function EditorEmptyState({ onVideoImported, onProjectOpened }: EditorEmp
 	const tc = useScopedT("common");
 	const [isDraggingOver, setIsDraggingOver] = useState(false);
 	const [dropError, setDropError] = useState<DropError>(null);
+	const [recentProjects, setRecentProjects] = useState(() => loadUserPreferences().recentProjects);
+	const [recentRecordings, setRecentRecordings] = useState<RecentRecordingEntry[]>([]);
 	// Freeze the last non-null error type so dialog content doesn't snap to the else-branch
 	// during the closing animation (same pattern as UnsavedChangesDialog).
 	const lastDropErrorRef = useRef<Exclude<DropError, null>>("unsupported-format");
@@ -26,15 +35,33 @@ export function EditorEmptyState({ onVideoImported, onProjectOpened }: EditorEmp
 		lastDropErrorRef.current = dropError;
 	}
 
+	useEffect(() => {
+		void (async () => {
+			if (!window.electronAPI?.listRecentRecordings) return;
+			const result = await window.electronAPI.listRecentRecordings();
+			if (result.success && result.recordings) {
+				setRecentRecordings(result.recordings);
+			}
+		})();
+	}, []);
+
+	const openVideoPath = useCallback(
+		async (videoPath: string) => {
+			const setResult = await nativeBridgeClient.project.setCurrentVideoPath(videoPath);
+			if (!setResult.success) {
+				setDropError("load-failed");
+				return;
+			}
+			onVideoImported(videoPath);
+		},
+		[onVideoImported],
+	);
+
 	const handleImportVideo = useCallback(async () => {
 		const result = await window.electronAPI.openVideoFilePicker();
 		if (result.canceled || !result.success || !result.path) return;
-
-		const setResult = await nativeBridgeClient.project.setCurrentVideoPath(result.path);
-		if (!setResult.success) return;
-
-		onVideoImported(result.path);
-	}, [onVideoImported]);
+		await openVideoPath(result.path);
+	}, [openVideoPath]);
 
 	const handleLoadProject = useCallback(async () => {
 		const result = await nativeBridgeClient.project.loadProjectFile(getProjectFolder());
@@ -44,9 +71,29 @@ export function EditorEmptyState({ onVideoImported, onProjectOpened }: EditorEmp
 			if (folder) {
 				saveUserPreferences({ projectFolder: folder });
 			}
+			rememberRecentProject(result.path);
+			setRecentProjects(loadUserPreferences().recentProjects);
 		}
 		onProjectOpened(result.project, result.path ?? null);
 	}, [onProjectOpened]);
+
+	const handleOpenRecentProject = useCallback(
+		async (filePath: string) => {
+			const result = await window.electronAPI.loadProjectFileFromPath(filePath);
+			if (!result.success || !result.project) {
+				setDropError("load-failed");
+				return;
+			}
+			rememberRecentProject(filePath);
+			setRecentProjects(loadUserPreferences().recentProjects);
+			onProjectOpened(result.project, result.path ?? filePath);
+		},
+		[onProjectOpened],
+	);
+
+	const handleRecord = useCallback(async () => {
+		await window.electronAPI.startNewRecording();
+	}, []);
 
 	const handleDragOver = useCallback((e: React.DragEvent) => {
 		e.preventDefault();
@@ -70,15 +117,17 @@ export function EditorEmptyState({ onVideoImported, onProjectOpened }: EditorEmp
 			if (files.length === 0) return;
 
 			const projectFile = files.find((f) => f.name.endsWith(".openscreen"));
-			if (!projectFile) {
+			const videoFile = files.find((f) => isVideoFileName(f.name));
+
+			const file = projectFile ?? videoFile;
+			if (!file) {
 				setDropError("unsupported-format");
 				return;
 			}
 
-			// Use Electron's webUtils.getPathForFile; File.path was removed in Electron 32+
 			let filePath: string;
 			try {
-				filePath = window.electronAPI.getPathForFile(projectFile);
+				filePath = window.electronAPI.getPathForFile(file);
 			} catch {
 				setDropError("load-failed");
 				return;
@@ -88,31 +137,36 @@ export function EditorEmptyState({ onVideoImported, onProjectOpened }: EditorEmp
 				return;
 			}
 
-			let result: Awaited<ReturnType<typeof window.electronAPI.loadProjectFileFromPath>>;
-			try {
-				result = await window.electronAPI.loadProjectFileFromPath(filePath);
-			} catch {
-				setDropError("load-failed");
-				return;
-			}
-			if (!result.success || !result.project) {
-				setDropError("load-failed");
+			if (projectFile) {
+				let result: Awaited<ReturnType<typeof window.electronAPI.loadProjectFileFromPath>>;
+				try {
+					result = await window.electronAPI.loadProjectFileFromPath(filePath);
+				} catch {
+					setDropError("load-failed");
+					return;
+				}
+				if (!result.success || !result.project) {
+					setDropError("load-failed");
+					return;
+				}
+				rememberRecentProject(filePath);
+				setRecentProjects(loadUserPreferences().recentProjects);
+				onProjectOpened(result.project, result.path ?? null);
 				return;
 			}
 
-			onProjectOpened(result.project, result.path ?? null);
+			await openVideoPath(filePath);
 		},
-		[onProjectOpened],
+		[onProjectOpened, openVideoPath],
 	);
 
 	return (
 		<div
-			className="flex h-full w-full flex-col items-center justify-center bg-[#09090b]"
+			className="relative flex h-full w-full flex-col items-center justify-center bg-[#09090b]"
 			onDragOver={handleDragOver}
 			onDragLeave={handleDragLeave}
 			onDrop={handleDrop}
 		>
-			{/* Drop overlay */}
 			{isDraggingOver && (
 				<div className="pointer-events-none absolute inset-0 z-50 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#34B27B] bg-[#34B27B]/10">
 					<Upload className="mb-3 h-10 w-10 text-[#34B27B]" />
@@ -120,7 +174,6 @@ export function EditorEmptyState({ onVideoImported, onProjectOpened }: EditorEmp
 				</div>
 			)}
 
-			{/* Drop error dialog */}
 			<Dialog open={dropError !== null} onOpenChange={(open) => !open && setDropError(null)}>
 				<DialogContent className="bg-[#09090b] border-white/10 rounded-2xl max-w-sm p-6 gap-0">
 					<DialogHeader className="mb-4">
@@ -161,8 +214,7 @@ export function EditorEmptyState({ onVideoImported, onProjectOpened }: EditorEmp
 				</DialogContent>
 			</Dialog>
 
-			<div className="relative flex flex-col items-center gap-8 px-6 text-center">
-				{/* Logo */}
+			<div className="relative flex w-full max-w-lg flex-col items-center gap-8 px-6 text-center">
 				<img
 					src="./openscreen.png"
 					alt=""
@@ -177,29 +229,85 @@ export function EditorEmptyState({ onVideoImported, onProjectOpened }: EditorEmp
 					</p>
 				</div>
 
-				{/* Actions */}
-				<div className="flex flex-col gap-3 w-full max-w-xs">
+				<div className="flex w-full max-w-xs flex-col gap-3">
 					<button
 						type="button"
-						onClick={handleImportVideo}
-						className="flex items-center justify-center gap-2.5 w-full px-4 py-3 rounded-xl bg-[#34B27B] hover:bg-[#2d9e6c] active:bg-[#27885c] text-white font-medium text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#34B27B] focus-visible:ring-offset-2 focus-visible:ring-offset-[#09090b]"
+						onClick={() => void handleRecord()}
+						className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#34B27B] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#2d9e6c] active:bg-[#27885c] outline-none focus-visible:ring-2 focus-visible:ring-[#34B27B] focus-visible:ring-offset-2 focus-visible:ring-offset-[#09090b]"
+					>
+						<Clapperboard className="h-4 w-4" />
+						{te("emptyState.recordButton")}
+					</button>
+					<button
+						type="button"
+						onClick={() => void handleImportVideo()}
+						className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-slate-300 transition-colors hover:bg-white/10 outline-none focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[#09090b]"
 					>
 						<Film className="h-4 w-4" />
 						{te("emptyState.importVideoButton")}
 					</button>
 					<button
 						type="button"
-						onClick={handleLoadProject}
-						className="flex items-center justify-center gap-2.5 w-full px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 font-medium text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[#09090b]"
+						onClick={() => void handleLoadProject()}
+						className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-slate-300 transition-colors hover:bg-white/10 outline-none focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[#09090b]"
 					>
 						<FolderOpen className="h-4 w-4" />
 						{te("emptyState.loadProjectButton")}
 					</button>
 				</div>
 
+				{(recentProjects.length > 0 || recentRecordings.length > 0) && (
+					<div className="w-full space-y-4 text-left">
+						{recentProjects.length > 0 && (
+							<div>
+								<div className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+									<History className="h-3 w-3" />
+									{te("emptyState.recentProjects")}
+								</div>
+								<ul className="space-y-1">
+									{recentProjects.slice(0, 5).map((project) => (
+										<li key={project.path}>
+											<button
+												type="button"
+												onClick={() => void handleOpenRecentProject(project.path)}
+												className="w-full truncate rounded-lg px-3 py-2 text-left text-xs text-slate-300 hover:bg-white/5"
+												title={project.path}
+											>
+												{project.name}
+											</button>
+										</li>
+									))}
+								</ul>
+							</div>
+						)}
+						{recentRecordings.length > 0 && (
+							<div>
+								<div className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+									<Film className="h-3 w-3" />
+									{te("emptyState.recentRecordings")}
+								</div>
+								<ul className="space-y-1">
+									{recentRecordings.slice(0, 5).map((recording) => (
+										<li key={recording.path}>
+											<button
+												type="button"
+												onClick={() => void openVideoPath(recording.path)}
+												className="w-full truncate rounded-lg px-3 py-2 text-left text-xs text-slate-300 hover:bg-white/5"
+												title={recording.path}
+											>
+												{recording.name}
+											</button>
+										</li>
+									))}
+								</ul>
+							</div>
+						)}
+					</div>
+				)}
+
 				<div className="flex flex-col items-center gap-2">
 					<p className="text-xs text-slate-600">{te("emptyState.supportedFormats")}</p>
-					<div className="flex items-center gap-1.5 text-xs text-slate-700 mt-4">
+					<div className="mt-2 flex items-center gap-1.5 text-xs text-slate-700">
 						<Upload className="h-3 w-3" />
 						<span>{te("emptyState.dragDropHint")}</span>
 					</div>
