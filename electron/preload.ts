@@ -68,6 +68,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	copyTextToClipboard: (text: string) => {
 		return ipcRenderer.invoke("copy-text-to-clipboard", text);
 	},
+	canShareFile: () => {
+		return ipcRenderer.invoke("can-share-file");
+	},
+	shareFile: (filePath: string) => {
+		return ipcRenderer.invoke("share-file", filePath);
+	},
 	requestCameraAccess: () => {
 		return ipcRenderer.invoke("request-camera-access");
 	},

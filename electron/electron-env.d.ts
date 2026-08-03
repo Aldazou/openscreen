@@ -57,6 +57,13 @@ interface Window {
 			error?: string;
 		}>;
 		copyTextToClipboard: (text: string) => Promise<{ success: boolean; error?: string }>;
+		canShareFile: () => Promise<{ success: boolean; available?: boolean; error?: string }>;
+		shareFile: (filePath: string) => Promise<{
+			success: boolean;
+			cancelled?: boolean;
+			available?: boolean;
+			error?: string;
+		}>;
 		requestCameraAccess: () => Promise<{
 			success: boolean;
 			granted: boolean;

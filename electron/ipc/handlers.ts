@@ -44,6 +44,7 @@ import { createCursorRecordingSession } from "../native-bridge/cursor/recording/
 import { requestMacCursorAccessibilityAccess } from "../native-bridge/cursor/recording/macNativeCursorRecordingSession";
 import type { CursorRecordingSession } from "../native-bridge/cursor/recording/session";
 import { patchWebmDurationOnDisk } from "../recording/webm-duration";
+import { canShareExportedFile, shareExportedFile } from "../shareFile";
 import { createRegionPickerWindow } from "../windows";
 import { registerAiIpcHandlers } from "./ai";
 import { registerNativeBridgeHandlers } from "./nativeBridge";
@@ -2680,6 +2681,18 @@ export function registerIpcHandlers(
 				return { success: false, error: String(error) };
 			}
 		}
+	});
+
+	ipcMain.handle("can-share-file", async () => {
+		const available = await canShareExportedFile();
+		return { success: true, available };
+	});
+
+	ipcMain.handle("share-file", async (_, filePath: unknown) => {
+		if (typeof filePath !== "string" || !filePath) {
+			return { success: false, error: "file path required" };
+		}
+		return shareExportedFile(filePath, getMainWindow());
 	});
 
 	ipcMain.handle("read-binary-file", async (_, filePath: string) => {

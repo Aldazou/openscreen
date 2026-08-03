@@ -33,7 +33,7 @@ Based on the original open-source OpenScreen project (now archived upstream). Th
 - Motion blur, crop, trim, and per-segment speed control.
 - Text, arrow, and image annotations, with text animation presets.
 - Recent projects / recordings home, plus drag-and-drop video import.
-- Export to MP4 or GIF — then copy path or reveal in Finder/Explorer.
+- Export to MP4 or GIF — then copy path, reveal in Finder/Explorer, or open the system share sheet (macOS/Windows).
 - **AI Director** (optional keys): image/video generation, TTS/music, avatar clips, media library, and a prompt-driven director to place assets on the timeline.
 - Languages: Arabic, English, Spanish, French, Italian, Japanese, Korean, Portuguese (Brazil), Russian, Turkish, Vietnamese, Simplified Chinese, and Traditional Chinese.
 

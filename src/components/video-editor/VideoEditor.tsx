@@ -254,6 +254,7 @@ export default function VideoEditor() {
 		DEFAULT_GIF_SETTINGS.sizePreset,
 	);
 	const [exportedFilePath, setExportedFilePath] = useState<string | null>(null);
+	const [exportShareAvailable, setExportShareAvailable] = useState(false);
 	const [lastSavedSnapshot, setLastSavedSnapshot] = useState<string | null>(null);
 	const [unsavedExport, setUnsavedExport] = useState<{
 		arrayBuffer: ArrayBuffer;
@@ -1805,6 +1806,40 @@ export default function VideoEditor() {
 		}
 	}, []);
 
+	useEffect(() => {
+		let cancelled = false;
+		void window.electronAPI
+			?.canShareFile?.()
+			.then((result) => {
+				if (!cancelled) setExportShareAvailable(Boolean(result?.available));
+			})
+			.catch(() => {
+				if (!cancelled) setExportShareAvailable(false);
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
+	const handleShareExportedFile = useCallback(
+		async (filePath: string) => {
+			try {
+				const result = await window.electronAPI.shareFile(filePath);
+				if (result.cancelled) return;
+				if (!result.success) {
+					toast.error(
+						result.available === false
+							? rawT("dialogs.export.shareUnavailable")
+							: (result.error ?? rawT("dialogs.export.shareFailed")),
+					);
+				}
+			} catch (error) {
+				toast.error(String(error) || rawT("dialogs.export.shareFailed"));
+			}
+		},
+		[rawT],
+	);
+
 	const handleExportSaved = useCallback(
 		(formatLabel: "GIF" | "Video", filePath: string) => {
 			setExportedFilePath(filePath);
@@ -3064,6 +3099,10 @@ export default function VideoEditor() {
 				exportedFilePath={exportedFilePath || undefined}
 				onShowInFolder={
 					exportedFilePath ? () => void handleShowExportedFile(exportedFilePath) : undefined
+				}
+				shareAvailable={exportShareAvailable}
+				onShare={
+					exportedFilePath ? () => void handleShareExportedFile(exportedFilePath) : undefined
 				}
 			/>
 

@@ -1,4 +1,4 @@
-import { Check, Copy, Download, FolderOpen, Loader2, X } from "lucide-react";
+import { Check, Copy, Download, FolderOpen, Loader2, Share2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,8 @@ interface ExportDialogProps {
 	exportFormat?: "mp4" | "gif";
 	exportedFilePath?: string;
 	onShowInFolder?: () => void;
+	onShare?: () => void;
+	shareAvailable?: boolean;
 }
 
 export function ExportDialog({
@@ -27,6 +29,8 @@ export function ExportDialog({
 	exportFormat = "mp4",
 	exportedFilePath,
 	onShowInFolder,
+	onShare,
+	shareAvailable = false,
 }: ExportDialogProps) {
 	const t = useScopedT("dialogs");
 	const [showSuccess, setShowSuccess] = useState(false);
@@ -147,6 +151,16 @@ export function ExportDialog({
 												)}
 												{copied ? t("export.copied") : t("export.copyPath")}
 											</Button>
+											{shareAvailable && onShare && (
+												<Button
+													variant="secondary"
+													onClick={onShare}
+													className="w-fit gap-1.5 px-3 py-1 text-sm rounded-md bg-white/10 hover:bg-white/20 text-slate-200"
+												>
+													<Share2 className="h-3.5 w-3.5" />
+													{t("export.share")}
+												</Button>
+											)}
 										</div>
 									)}
 									{exportedFilePath && (
