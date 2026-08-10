@@ -324,6 +324,21 @@ export default function VideoEditor() {
 	const { locale, setLocale, t: rawT } = useI18n();
 	const t = useScopedT("editor");
 	const ts = useScopedT("settings");
+
+	useEffect(() => {
+		const key = "openscreen_whats_new_elevate_v1";
+		try {
+			if (localStorage.getItem(key)) return;
+			localStorage.setItem(key, "1");
+		} catch {
+			return;
+		}
+		toast.message(t("whatsNew.title"), {
+			description: t("whatsNew.body"),
+			duration: 9000,
+		});
+	}, [t]);
+
 	const cursorUnavailableMessage =
 		nativePlatform === "linux"
 			? ts("cursor.linuxUnavailable")

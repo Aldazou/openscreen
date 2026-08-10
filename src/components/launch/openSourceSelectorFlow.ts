@@ -11,9 +11,12 @@ export type OpenSourceSelectorResult = {
 	access?: ScreenAccessResult;
 };
 
+export type SourceSelectorTab = "screens" | "windows";
+
 type OpenSourceSelectorFlowOptions = {
-	openSourceSelector: () => Promise<OpenSourceSelectorResult>;
+	openSourceSelector: (tab?: SourceSelectorTab) => Promise<OpenSourceSelectorResult>;
 	requestScreenAccess: () => Promise<ScreenAccessResult>;
+	tab?: SourceSelectorTab;
 	wait?: (ms: number) => Promise<void>;
 	retryDelayMs?: number;
 	maxAttempts?: number;
@@ -32,11 +35,12 @@ function shouldRetryAfterPermissionPrompt(result: OpenSourceSelectorResult): boo
 export async function openSourceSelectorWithPermissionRetry({
 	openSourceSelector,
 	requestScreenAccess,
+	tab,
 	wait = defaultWait,
 	retryDelayMs = 750,
 	maxAttempts = 8,
 }: OpenSourceSelectorFlowOptions): Promise<OpenSourceSelectorResult> {
-	const initialResult = await openSourceSelector();
+	const initialResult = await openSourceSelector(tab);
 	if (!shouldRetryAfterPermissionPrompt(initialResult)) {
 		return initialResult;
 	}
@@ -46,7 +50,7 @@ export async function openSourceSelectorWithPermissionRetry({
 		const access = await requestScreenAccess();
 
 		if (access.granted) {
-			return openSourceSelector();
+			return openSourceSelector(tab);
 		}
 
 		if (access.status !== "not-determined") {

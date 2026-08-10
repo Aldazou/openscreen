@@ -46,6 +46,13 @@ export interface UserPreferences {
 	recordingCountdownSec: 0 | 3;
 	/** Last selected capture source (id + name for rematch after relaunch) */
 	lastRecordingSource: { id: string; name: string } | null;
+	/** Last HUD capture mode chip (Screen / Window / Region) */
+	lastCaptureMode: "screen" | "window" | "region";
+	/**
+	 * When true, the next HUD mount should open the region picker once
+	 * (e.g. Studio home "Record region"), then clear the flag.
+	 */
+	pendingRegionPick: boolean;
 }
 
 export const DEFAULT_PREFS: UserPreferences = {
@@ -62,6 +69,8 @@ export const DEFAULT_PREFS: UserPreferences = {
 	recordingWebcamEnabled: false,
 	recordingCountdownSec: 3,
 	lastRecordingSource: null,
+	lastCaptureMode: "screen",
+	pendingRegionPick: false,
 };
 
 /** Parses stored preferences without throwing on malformed JSON. */
@@ -164,6 +173,16 @@ export function loadUserPreferences(): UserPreferences {
 			}
 			return DEFAULT_PREFS.lastRecordingSource;
 		})(),
+		lastCaptureMode:
+			raw.lastCaptureMode === "screen" ||
+			raw.lastCaptureMode === "window" ||
+			raw.lastCaptureMode === "region"
+				? raw.lastCaptureMode
+				: DEFAULT_PREFS.lastCaptureMode,
+		pendingRegionPick:
+			typeof raw.pendingRegionPick === "boolean"
+				? raw.pendingRegionPick
+				: DEFAULT_PREFS.pendingRegionPick,
 	};
 }
 

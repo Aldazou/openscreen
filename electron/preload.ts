@@ -44,8 +44,20 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	startNewRecording: () => {
 		return ipcRenderer.invoke("start-new-recording");
 	},
-	openSourceSelector: () => {
-		return ipcRenderer.invoke("open-source-selector");
+	openSourceSelector: (tab?: "screens" | "windows") => {
+		return ipcRenderer.invoke("open-source-selector", tab);
+	},
+	showRecordingDone: (payload: { path: string; markCount: number; hasRegion: boolean }) => {
+		return ipcRenderer.invoke("show-recording-done", payload);
+	},
+	getRecordingDonePayload: () => {
+		return ipcRenderer.invoke("get-recording-done-payload");
+	},
+	recordingDoneContinue: () => {
+		return ipcRenderer.invoke("recording-done-continue");
+	},
+	recordingDoneRerecord: () => {
+		return ipcRenderer.invoke("recording-done-rerecord");
 	},
 	selectSource: (source: ProcessedDesktopSource) => {
 		return ipcRenderer.invoke("select-source", source);
@@ -85,6 +97,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	},
 	requestScreenAccess: () => {
 		return ipcRenderer.invoke("request-screen-access");
+	},
+	openScreenRecordingSettings: () => {
+		return ipcRenderer.invoke("open-screen-recording-settings");
 	},
 	requestNativeMacCursorAccess: () => {
 		return ipcRenderer.invoke("request-native-mac-cursor-access");

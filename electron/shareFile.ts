@@ -1,15 +1,30 @@
 import fs from "node:fs/promises";
+import { createRequire } from "node:module";
 import path from "node:path";
 import type { BrowserWindow } from "electron";
 
+const require = createRequire(import.meta.url);
+
+type NativeShareModule = {
+	canShare: () => boolean;
+	share: (
+		options: { title?: string; files?: string[] },
+		browserWindow?: BrowserWindow,
+	) => Promise<{ method: "native" | "cancelled" }>;
+};
+
+function loadNativeShare(): NativeShareModule | null {
+	try {
+		return require("electron-native-share") as NativeShareModule;
+	} catch {
+		return null;
+	}
+}
+
 /** Whether the native OS share sheet is available (macOS / Windows). */
 export async function canShareExportedFile(): Promise<boolean> {
-	try {
-		const { canShare } = await import("electron-native-share");
-		return canShare();
-	} catch {
-		return false;
-	}
+	const mod = loadNativeShare();
+	return Boolean(mod?.canShare());
 }
 
 /**
@@ -27,16 +42,17 @@ export async function shareExportedFile(
 		return { success: false, error: "File not found" };
 	}
 
+	const mod = loadNativeShare();
+	if (!mod?.canShare()) {
+		return {
+			success: false,
+			available: false,
+			error: "Sharing is not available on this platform",
+		};
+	}
+
 	try {
-		const { canShare, share } = await import("electron-native-share");
-		if (!canShare()) {
-			return {
-				success: false,
-				available: false,
-				error: "Sharing is not available on this platform",
-			};
-		}
-		const result = await share(
+		const result = await mod.share(
 			{ files: [resolved], title: path.basename(resolved) },
 			parentWindow ?? undefined,
 		);

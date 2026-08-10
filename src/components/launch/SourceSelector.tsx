@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { Crop } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { MdCheck } from "react-icons/md";
 import { useScopedT } from "@/contexts/I18nContext";
+import { selectScreenWithRegion } from "@/lib/captureRegionFlow";
 import { loadUserPreferences, saveUserPreferences } from "@/lib/userPreferences";
 import { Button } from "../ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
@@ -17,6 +19,11 @@ interface DesktopSource {
 export function SourceSelector() {
 	const t = useScopedT("launch");
 	const tc = useScopedT("common");
+	const initialTab = useMemo(() => {
+		const tab = new URLSearchParams(window.location.search).get("tab");
+		return tab === "windows" ? "windows" : "screens";
+	}, []);
+	const [activeTab, setActiveTab] = useState<"screens" | "windows">(initialTab);
 	const [sources, setSources] = useState<DesktopSource[]>([]);
 	const [selectedSource, setSelectedSource] = useState<DesktopSource | null>(null);
 	const [loading, setLoading] = useState(true);
@@ -80,6 +87,7 @@ export function SourceSelector() {
 	const rememberSource = (source: DesktopSource) => {
 		saveUserPreferences({
 			lastRecordingSource: { id: source.id, name: source.name },
+			lastCaptureMode: source.id.startsWith("window:") ? "window" : "screen",
 		});
 	};
 
@@ -96,11 +104,7 @@ export function SourceSelector() {
 		if (!selectedSource || !selectedSource.id.startsWith("screen:")) return;
 		const result = await window.electronAPI.openRegionPicker(selectedSource.display_id);
 		if (result.canceled || !result.region) return;
-		rememberSource(selectedSource);
-		await window.electronAPI.selectSource({
-			...selectedSource,
-			captureRegion: result.region,
-		});
+		await selectScreenWithRegion(selectedSource, result.region);
 	};
 
 	if (loading) {
@@ -180,7 +184,12 @@ export function SourceSelector() {
 		<div className={`min-h-screen flex flex-col ${styles.glassContainer}`}>
 			<div className="flex-1 flex flex-col w-full px-3.5 pt-3.5">
 				<Tabs
-					defaultValue={screenSources.length === 0 ? "windows" : "screens"}
+					value={screenSources.length === 0 ? "windows" : activeTab}
+					onValueChange={(value) => {
+						if (value === "screens" || value === "windows") {
+							setActiveTab(value);
+						}
+					}}
 					className="flex-1 flex flex-col"
 				>
 					<TabsList className="mb-3 grid h-8 grid-cols-2 rounded-xl border border-white/[0.06] bg-white/[0.04] p-0.5">
@@ -229,8 +238,9 @@ export function SourceSelector() {
 					variant="ghost"
 					onClick={() => void handleShareRegion()}
 					disabled={!selectedSource?.id.startsWith("screen:")}
-					className="h-8 rounded-lg px-4 text-[11px] text-zinc-300 transition-transform duration-150 hover:bg-white/5 hover:text-white active:scale-95 disabled:opacity-30"
+					className="h-8 gap-1.5 rounded-lg border border-[#34B27B]/50 bg-[#34B27B]/10 px-4 text-[11px] font-semibold text-[#34B27B] transition-transform duration-150 hover:bg-[#34B27B]/20 hover:text-[#4ade80] active:scale-95 disabled:opacity-30"
 				>
+					<Crop className="h-3.5 w-3.5" />
 					{t("sourceSelector.recordRegion")}
 				</Button>
 				<Button

@@ -1,5 +1,15 @@
-import { AlertCircle, Clapperboard, Film, FolderOpen, History, Upload, X } from "lucide-react";
+import {
+	AlertCircle,
+	Clapperboard,
+	Crop,
+	Film,
+	FolderOpen,
+	History,
+	Upload,
+	X,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useScopedT } from "@/contexts/I18nContext";
 import { isVideoFileName, type RecentRecordingEntry } from "@/lib/recentItems";
@@ -11,6 +21,7 @@ import {
 	saveUserPreferences,
 } from "@/lib/userPreferences";
 import { nativeBridgeClient } from "@/native";
+import styles from "./EditorEmptyState.module.css";
 import { GettingStartedGuide } from "./GettingStartedGuide";
 
 interface EditorEmptyStateProps {
@@ -58,10 +69,19 @@ export function EditorEmptyState({ onVideoImported, onProjectOpened }: EditorEmp
 	);
 
 	const handleImportVideo = useCallback(async () => {
-		const result = await window.electronAPI.openVideoFilePicker();
-		if (result.canceled || !result.success || !result.path) return;
-		await openVideoPath(result.path);
-	}, [openVideoPath]);
+		try {
+			const result = await window.electronAPI.openVideoFilePicker();
+			if (result.canceled) return;
+			if (!result.success || !result.path) {
+				toast.error(te("emptyState.dropErrors.couldNotOpenMessage"));
+				return;
+			}
+			await openVideoPath(result.path);
+		} catch (error) {
+			console.error("Import video failed:", error);
+			toast.error(te("emptyState.dropErrors.couldNotOpenMessage"));
+		}
+	}, [openVideoPath, te]);
 
 	const handleLoadProject = useCallback(async () => {
 		const result = await nativeBridgeClient.project.loadProjectFile(getProjectFolder());
@@ -92,6 +112,12 @@ export function EditorEmptyState({ onVideoImported, onProjectOpened }: EditorEmp
 	);
 
 	const handleRecord = useCallback(async () => {
+		saveUserPreferences({ pendingRegionPick: false });
+		await window.electronAPI.startNewRecording();
+	}, []);
+
+	const handleRecordRegion = useCallback(async () => {
+		saveUserPreferences({ lastCaptureMode: "region", pendingRegionPick: true });
 		await window.electronAPI.startNewRecording();
 	}, []);
 
@@ -160,15 +186,30 @@ export function EditorEmptyState({ onVideoImported, onProjectOpened }: EditorEmp
 		[onProjectOpened, openVideoPath],
 	);
 
+	const recentItems = [
+		...recentProjects.slice(0, 5).map((project) => ({
+			key: `project:${project.path}`,
+			label: project.name,
+			path: project.path,
+			kind: "project" as const,
+		})),
+		...recentRecordings.slice(0, 5).map((recording) => ({
+			key: `recording:${recording.path}`,
+			label: recording.name,
+			path: recording.path,
+			kind: "recording" as const,
+		})),
+	].slice(0, 8);
+
 	return (
 		<div
-			className="relative flex h-full w-full flex-col items-center justify-center bg-[#09090b]"
+			className={`relative flex h-full w-full flex-col ${styles.home}`}
 			onDragOver={handleDragOver}
 			onDragLeave={handleDragLeave}
 			onDrop={handleDrop}
 		>
 			{isDraggingOver && (
-				<div className="pointer-events-none absolute inset-0 z-50 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#34B27B] bg-[#34B27B]/10">
+				<div className="pointer-events-none absolute inset-0 z-50 flex flex-col items-center justify-center border-2 border-dashed border-[#34B27B] bg-[#34B27B]/10">
 					<Upload className="mb-3 h-10 w-10 text-[#34B27B]" />
 					<p className="text-base font-semibold text-[#34B27B]">{te("emptyState.dropOverlay")}</p>
 				</div>
@@ -214,108 +255,106 @@ export function EditorEmptyState({ onVideoImported, onProjectOpened }: EditorEmp
 				</DialogContent>
 			</Dialog>
 
-			<div className="relative flex w-full max-w-lg flex-col items-center gap-8 px-6 text-center">
-				<img
-					src="./openscreen.png"
-					alt=""
-					aria-hidden="true"
-					className="h-16 w-16 rounded-2xl opacity-90"
-				/>
-
-				<div className="flex flex-col gap-2">
-					<h2 className="text-xl font-semibold text-slate-200">{te("emptyState.title")}</h2>
-					<p className="max-w-sm text-sm leading-relaxed text-slate-500">
+			{/* First viewport: brand + one headline + CTAs */}
+			<section className="relative z-10 flex min-h-full w-full flex-col items-center px-6 pb-16 pt-[18vh]">
+				<div className={`flex w-full max-w-md flex-col items-center text-center ${styles.hero}`}>
+					<img
+						src="./openscreen.png"
+						alt="OpenScreen"
+						className="mb-5 h-20 w-20 rounded-[1.35rem] shadow-[0_18px_40px_rgba(0,0,0,0.35)]"
+					/>
+					<p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#34B27B]/90">
+						OpenScreen
+					</p>
+					<h1 className="text-[1.75rem] font-semibold tracking-tight text-white">
+						{te("emptyState.title")}
+					</h1>
+					<p className="mt-2 max-w-sm text-sm leading-relaxed text-zinc-400">
 						{te("emptyState.description")}
 					</p>
 				</div>
 
-				<div className="flex w-full max-w-xs flex-col gap-3">
+				<div className={`mt-8 flex w-full max-w-sm flex-col gap-2.5 ${styles.ctaRow}`}>
 					<button
 						type="button"
 						onClick={() => void handleRecord()}
-						className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#34B27B] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#2d9e6c] active:bg-[#27885c] outline-none focus-visible:ring-2 focus-visible:ring-[#34B27B] focus-visible:ring-offset-2 focus-visible:ring-offset-[#09090b]"
+						className="flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#34B27B] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#2d9e6c] active:bg-[#27885c] outline-none focus-visible:ring-2 focus-visible:ring-[#34B27B] focus-visible:ring-offset-2 focus-visible:ring-offset-[#09090b]"
 					>
 						<Clapperboard className="h-4 w-4" />
 						{te("emptyState.recordButton")}
 					</button>
-					<button
-						type="button"
-						onClick={() => void handleImportVideo()}
-						className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-slate-300 transition-colors hover:bg-white/10 outline-none focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[#09090b]"
-					>
-						<Film className="h-4 w-4" />
-						{te("emptyState.importVideoButton")}
-					</button>
+					<div className="grid grid-cols-2 gap-2.5">
+						<button
+							type="button"
+							onClick={() => void handleRecordRegion()}
+							className="flex items-center justify-center gap-2 rounded-xl border border-[#34B27B]/35 bg-[#34B27B]/10 px-3 py-2.5 text-sm font-medium text-[#34B27B] transition-colors hover:bg-[#34B27B]/18 outline-none focus-visible:ring-2 focus-visible:ring-[#34B27B]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#09090b]"
+						>
+							<Crop className="h-4 w-4" />
+							{te("emptyState.recordRegionButton")}
+						</button>
+						<button
+							type="button"
+							onClick={() => void handleImportVideo()}
+							className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm font-medium text-zinc-300 transition-colors hover:bg-white/[0.08] outline-none focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[#09090b]"
+						>
+							<Film className="h-4 w-4" />
+							{te("emptyState.importVideoButton")}
+						</button>
+					</div>
 					<button
 						type="button"
 						onClick={() => void handleLoadProject()}
-						className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-slate-300 transition-colors hover:bg-white/10 outline-none focus-visible:ring-2 focus-visible:ring-white/30 focus-visible:ring-offset-2 focus-visible:ring-offset-[#09090b]"
+						className="flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-zinc-500 transition-colors hover:bg-white/[0.04] hover:text-zinc-300"
 					>
-						<FolderOpen className="h-4 w-4" />
+						<FolderOpen className="h-3.5 w-3.5" />
 						{te("emptyState.loadProjectButton")}
 					</button>
 				</div>
 
-				{(recentProjects.length > 0 || recentRecordings.length > 0) && (
-					<div className="w-full space-y-4 text-left">
-						{recentProjects.length > 0 && (
-							<div>
-								<div className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-slate-500">
-									<History className="h-3 w-3" />
-									{te("emptyState.recentProjects")}
-								</div>
-								<ul className="space-y-1">
-									{recentProjects.slice(0, 5).map((project) => (
-										<li key={project.path}>
-											<button
-												type="button"
-												onClick={() => void handleOpenRecentProject(project.path)}
-												className="w-full truncate rounded-lg px-3 py-2 text-left text-xs text-slate-300 hover:bg-white/5"
-												title={project.path}
-											>
-												{project.name}
-											</button>
-										</li>
-									))}
-								</ul>
-							</div>
-						)}
-						{recentRecordings.length > 0 && (
-							<div>
-								<div className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-slate-500">
-									<Film className="h-3 w-3" />
-									{te("emptyState.recentRecordings")}
-								</div>
-								<ul className="space-y-1">
-									{recentRecordings.slice(0, 5).map((recording) => (
-										<li key={recording.path}>
-											<button
-												type="button"
-												onClick={() => void openVideoPath(recording.path)}
-												className="w-full truncate rounded-lg px-3 py-2 text-left text-xs text-slate-300 hover:bg-white/5"
-												title={recording.path}
-											>
-												{recording.name}
-											</button>
-										</li>
-									))}
-								</ul>
-							</div>
-						)}
+				{recentItems.length > 0 && (
+					<div className={`mt-10 w-full max-w-md text-left ${styles.recents}`}>
+						<div className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+							<History className="h-3 w-3" />
+							{te("emptyState.recentLabel")}
+						</div>
+						<ul className="divide-y divide-white/[0.05] border-y border-white/[0.05]">
+							{recentItems.map((item) => (
+								<li key={item.key}>
+									<button
+										type="button"
+										onClick={() =>
+											void (item.kind === "project"
+												? handleOpenRecentProject(item.path)
+												: openVideoPath(item.path))
+										}
+										className="flex w-full items-center justify-between gap-3 px-1 py-2.5 text-left text-sm text-zinc-300 transition-colors hover:text-white"
+										title={item.path}
+									>
+										<span className="truncate">{item.label}</span>
+										<span className="shrink-0 text-[10px] uppercase tracking-wide text-zinc-600">
+											{item.kind === "project"
+												? te("emptyState.recentProjectKind")
+												: te("emptyState.recentRecordingKind")}
+										</span>
+									</button>
+								</li>
+							))}
+						</ul>
 					</div>
 				)}
+			</section>
 
-				<div className="flex flex-col items-center gap-2">
-					<p className="text-xs text-slate-600">{te("emptyState.supportedFormats")}</p>
-					<div className="mt-2 flex items-center gap-1.5 text-xs text-slate-700">
-						<Upload className="h-3 w-3" />
-						<span>{te("emptyState.dragDropHint")}</span>
-					</div>
-					<div className="mt-2">
-						<GettingStartedGuide />
-					</div>
+			{/* Below the fold: drag-drop + getting started */}
+			<section className="relative z-10 flex w-full flex-col items-center gap-3 border-t border-white/[0.04] px-6 py-10 text-center">
+				<p className="text-xs text-zinc-600">{te("emptyState.supportedFormats")}</p>
+				<div className="flex items-center gap-1.5 text-xs text-zinc-600">
+					<Upload className="h-3 w-3" />
+					<span>{te("emptyState.dragDropHint")}</span>
 				</div>
-			</div>
+				<div className="mt-2">
+					<GettingStartedGuide />
+				</div>
+			</section>
 		</div>
 	);
 }

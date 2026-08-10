@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { CountdownOverlay } from "./components/launch/CountdownOverlay.tsx";
 import { LaunchWindow } from "./components/launch/LaunchWindow";
+import { RecordingDone } from "./components/launch/RecordingDone";
 import { RegionPicker } from "./components/launch/RegionPicker";
 import { SourceSelector } from "./components/launch/SourceSelector";
 import { Toaster } from "./components/ui/sonner";
@@ -32,7 +33,8 @@ export default function App() {
 			type === "hud-overlay" ||
 			type === "source-selector" ||
 			type === "countdown-overlay" ||
-			type === "region-picker"
+			type === "region-picker" ||
+			type === "recording-done"
 		) {
 			document.body.style.background = "transparent";
 			document.documentElement.style.background = "transparent";
@@ -71,6 +73,8 @@ export default function App() {
 				return <CountdownOverlay />;
 			case "region-picker":
 				return <RegionPicker />;
+			case "recording-done":
+				return <RecordingDone />;
 			case "editor":
 				return (
 					<ShortcutsProvider>

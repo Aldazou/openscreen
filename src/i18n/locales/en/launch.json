@@ -43,10 +43,29 @@
 		"emptyDescription": "If you just granted screen recording permission, reload this picker. On macOS you may need to reopen OpenScreen.",
 		"loadFailedDescription": "OpenScreen could not load capture sources. Reload this picker and try again.",
 		"defaultSourceName": "Screen",
-		"recordRegion": "Select region…"
+		"recordRegion": "Record region"
+	},
+	"hud": {
+		"regionBadge": "Region",
+		"markLabel": "Mark",
+		"modeScreen": "Screen",
+		"modeWindow": "Window",
+		"modeRegion": "Region"
+	},
+	"recordingDone": {
+		"title": "Recording ready",
+		"description": "Open it in Studio to edit, or capture another take.",
+		"marksChip": "{{count}} marks",
+		"regionChip": "Region crop",
+		"openStudio": "Open in Studio",
+		"recordAgain": "Record again"
 	},
 	"recording": {
-		"selectSource": "Please select a source to record"
+		"selectSource": "Please select a source to record",
+		"permissionRequired": "Screen Recording permission is required. Enable OpenScreen (or Electron) in System Settings, then relaunch.",
+		"permissionOpenSettings": "Open Screen Recording settings",
+		"sourcesUnavailable": "Could not find a screen to record. Check Screen Recording permission and try again.",
+		"sourceReady": "Ready to record {{name}}"
 	},
 	"language": "Language",
 	"systemLanguagePrompt": {

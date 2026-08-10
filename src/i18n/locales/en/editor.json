@@ -63,14 +63,23 @@
 		"failed": "Could not generate captions.",
 		"truncated": "Only the first {{minutes}} minutes were transcribed."
 	},
+	"whatsNew": {
+		"title": "New capture & finish tools",
+		"body": "Region record · Privacy blur on the timeline · Pause→Mark zooms · Export share sheet"
+	},
 	"emptyState": {
-		"title": "No project open",
-		"description": "Record a new demo, import a video, or open a recent project.",
-		"recordButton": "New Recording",
-		"importVideoButton": "Import Video File…",
-		"loadProjectButton": "Load Project…",
+		"title": "Capture. Polish. Ship.",
+		"description": "Record your screen, mark moments, and finish in Studio.",
+		"highlights": "Region capture · Privacy blur · Pause to mark · Recents",
+		"recordButton": "Record",
+		"recordRegionButton": "Record region",
+		"importVideoButton": "Import",
+		"loadProjectButton": "Open project…",
+		"recentLabel": "Recent",
 		"recentProjects": "Recent projects",
 		"recentRecordings": "Recent recordings",
+		"recentProjectKind": "Project",
+		"recentRecordingKind": "Recording",
 		"supportedFormats": "Supported formats: MP4, MOV, WebM, MKV, AVI, M4V, WMV",
 		"dragDropHint": "or drag & drop a video or .openscreen project here",
 		"dropOverlay": "Drop video or project to open",

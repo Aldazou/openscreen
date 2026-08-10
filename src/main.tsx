@@ -9,7 +9,8 @@ if (
 	windowType === "hud-overlay" ||
 	windowType === "source-selector" ||
 	windowType === "countdown-overlay" ||
-	windowType === "region-picker"
+	windowType === "region-picker" ||
+	windowType === "recording-done"
 ) {
 	document.body.style.background = "transparent";
 	document.documentElement.style.background = "transparent";

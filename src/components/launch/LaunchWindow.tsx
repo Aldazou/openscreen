@@ -1,4 +1,4 @@
-import { Check, ChevronDown, Clapperboard, Columns3, Languages, Rows3 } from "lucide-react";
+import { Check, ChevronDown, Clapperboard, Columns3, Crop, Languages, Rows3 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { BsPauseCircle, BsPlayCircle, BsRecordCircle } from "react-icons/bs";
@@ -18,11 +18,19 @@ import {
 	MdVideoFile,
 	MdVolumeOff,
 	MdVolumeUp,
+	MdWindow,
 } from "react-icons/md";
 import { RxDragHandleDots2 } from "react-icons/rx";
+import { toast } from "sonner";
 import { useI18n, useScopedT } from "@/contexts/I18nContext";
 import { getAvailableLocales, getLocaleName } from "@/i18n/loader";
-import { loadUserPreferences, saveUserPreferences } from "@/lib/userPreferences";
+import { pickScreenRegionAndSelect } from "@/lib/captureRegionFlow";
+import { ensureScreenCaptureSource } from "@/lib/ensureCaptureSource";
+import {
+	loadUserPreferences,
+	saveUserPreferences,
+	type UserPreferences,
+} from "@/lib/userPreferences";
 import { nativeBridgeClient } from "@/native";
 import { useAudioLevelMeter } from "../../hooks/useAudioLevelMeter";
 import { useCameraDevices } from "../../hooks/useCameraDevices";
@@ -34,7 +42,12 @@ import { AudioLevelMeter } from "../ui/audio-level-meter";
 import { Button } from "../ui/button";
 import { Tooltip } from "../ui/tooltip";
 import styles from "./LaunchWindow.module.css";
-import { openSourceSelectorWithPermissionRetry } from "./openSourceSelectorFlow";
+import {
+	openSourceSelectorWithPermissionRetry,
+	type SourceSelectorTab,
+} from "./openSourceSelectorFlow";
+
+type CaptureMode = UserPreferences["lastCaptureMode"];
 
 const ICON_SIZE = 20;
 
@@ -428,7 +441,12 @@ export function LaunchWindow() {
 
 	const [selectedSource, setSelectedSource] = useState("Screen");
 	const [hasSelectedSource, setHasSelectedSource] = useState(false);
+	const [hasCaptureRegion, setHasCaptureRegion] = useState(false);
+	const [captureMode, setCaptureMode] = useState<CaptureMode>(
+		() => loadUserPreferences().lastCaptureMode,
+	);
 	const [, setRecordPointerDownCount] = useState(0);
+	const pendingRegionPickHandledRef = useRef(false);
 
 	useEffect(() => {
 		const checkSelectedSource = async () => {
@@ -437,9 +455,11 @@ export function LaunchWindow() {
 				if (source) {
 					setSelectedSource(source.name);
 					setHasSelectedSource(true);
+					setHasCaptureRegion(Boolean(source.captureRegion));
 				} else {
 					setSelectedSource("Screen");
 					setHasSelectedSource(false);
+					setHasCaptureRegion(false);
 				}
 			}
 		};
@@ -450,14 +470,109 @@ export function LaunchWindow() {
 		return () => clearInterval(interval);
 	}, []);
 
-	const openSourceSelector = async () => {
-		if (window.electronAPI) {
-			await openSourceSelectorWithPermissionRetry({
-				openSourceSelector: () => window.electronAPI.openSourceSelector(),
+	const reportCaptureFailure = useCallback(
+		(reason: "permission" | "no-sources" | "error" | "no-api", message?: string) => {
+			if (reason === "permission") {
+				// Do not auto-open System Settings — that steals focus every launch.
+				toast.error(t("recording.permissionRequired"), {
+					action: {
+						label: t("recording.permissionOpenSettings"),
+						onClick: () => {
+							void window.electronAPI?.openScreenRecordingSettings?.();
+						},
+					},
+				});
+				return;
+			}
+			toast.error(message || t("recording.sourcesUnavailable"));
+		},
+		[t],
+	);
+
+	const openSourceSelector = useCallback(
+		async (tab?: SourceSelectorTab) => {
+			if (!window.electronAPI) return;
+			const result = await openSourceSelectorWithPermissionRetry({
+				openSourceSelector: (selectorTab) => window.electronAPI.openSourceSelector(selectorTab),
 				requestScreenAccess: () => window.electronAPI.requestScreenAccess(),
+				tab,
 			});
+			if (!result.opened && result.reason === "screen-access-required") {
+				reportCaptureFailure("permission");
+			}
+		},
+		[reportCaptureFailure],
+	);
+
+	const openRegionCapture = useCallback(async () => {
+		if (!window.electronAPI || recording) return;
+		setCaptureMode("region");
+		saveUserPreferences({ lastCaptureMode: "region" });
+		const result = await pickScreenRegionAndSelect();
+		if (!result.ok && result.reason !== "canceled") {
+			reportCaptureFailure(
+				result.reason === "no-api" ? "no-sources" : result.reason,
+				result.message,
+			);
 		}
-	};
+	}, [recording, reportCaptureFailure]);
+
+	const selectCaptureMode = useCallback(
+		async (mode: CaptureMode) => {
+			if (recording) return;
+			setCaptureMode(mode);
+			saveUserPreferences({ lastCaptureMode: mode });
+			if (mode === "region") {
+				await openRegionCapture();
+				return;
+			}
+			if (mode === "screen") {
+				// Auto-select a screen so Record enables immediately, then offer the picker.
+				const ensured = await ensureScreenCaptureSource();
+				if (!ensured.ok) {
+					reportCaptureFailure(
+						ensured.reason === "no-api" ? "no-sources" : ensured.reason,
+						ensured.message,
+					);
+					return;
+				}
+				setSelectedSource(ensured.source.name);
+				setHasSelectedSource(true);
+				setHasCaptureRegion(false);
+			}
+			await openSourceSelector(mode === "window" ? "windows" : "screens");
+		},
+		[openRegionCapture, openSourceSelector, recording, reportCaptureFailure],
+	);
+
+	// Quietly restore a screen so Record can enable after relaunch. No toasts here —
+	// permission noise belongs to explicit Screen/Window/Region clicks.
+	useEffect(() => {
+		let cancelled = false;
+		void (async () => {
+			if (!window.electronAPI) return;
+			const existing = await window.electronAPI.getSelectedSource();
+			if (cancelled || existing) return;
+			const ensured = await ensureScreenCaptureSource();
+			if (cancelled || !ensured.ok) return;
+			setSelectedSource(ensured.source.name);
+			setHasSelectedSource(true);
+			setHasCaptureRegion(false);
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
+	useEffect(() => {
+		if (pendingRegionPickHandledRef.current || recording) return;
+		const prefs = loadUserPreferences();
+		if (!prefs.pendingRegionPick) return;
+		pendingRegionPickHandledRef.current = true;
+		saveUserPreferences({ pendingRegionPick: false, lastCaptureMode: "region" });
+		setCaptureMode("region");
+		void openRegionCapture();
+	}, [openRegionCapture, recording]);
 
 	const sendHudOverlayHide = () => {
 		if (window.electronAPI && window.electronAPI.hudOverlayHide) {
@@ -759,22 +874,64 @@ export function LaunchWindow() {
 					</button>
 				</Tooltip>
 
-				{/* Source selector */}
-				<button
-					data-testid="launch-source-selector-button"
-					className={`${hudGroupClasses} h-8 ${trayLayout === "vertical" ? "w-8 justify-center px-0" : "px-2.5"} ${styles.electronNoDrag}`}
-					onClick={openSourceSelector}
-					disabled={recording}
+				{/* Capture mode: Screen | Window | Region */}
+				<div
+					data-testid="launch-capture-mode"
+					className={`${hudGroupClasses} h-8 ${trayLayout === "vertical" ? "flex-col py-1" : "px-0.5"} ${styles.electronNoDrag}`}
 					title={selectedSource}
-					aria-label={selectedSource}
 				>
-					{getIcon("monitor", "text-white/80")}
-					<span
-						className={`${trayLayout === "vertical" ? "sr-only" : "max-w-[86px]"} truncate text-[11px] font-medium text-white/75`}
-					>
-						{selectedSource}
-					</span>
-				</button>
+					{(
+						[
+							{
+								mode: "screen" as const,
+								label: t("hud.modeScreen"),
+								icon: <MdMonitor size={14} />,
+								testId: "launch-mode-screen",
+							},
+							{
+								mode: "window" as const,
+								label: t("hud.modeWindow"),
+								icon: <MdWindow size={14} />,
+								testId: "launch-mode-window",
+							},
+							{
+								mode: "region" as const,
+								label: t("hud.modeRegion"),
+								icon: <Crop className="h-3.5 w-3.5" />,
+								testId: "launch-mode-region",
+							},
+						] as const
+					).map(({ mode, label, icon, testId }) => {
+						const isActive = captureMode === mode;
+						return (
+							<button
+								key={mode}
+								type="button"
+								data-testid={testId}
+								className={`flex h-7 items-center justify-center gap-1 rounded-lg px-2 text-[10px] font-semibold uppercase tracking-wide transition-all duration-150 ${
+									trayLayout === "vertical" ? "w-8 px-0" : ""
+								} ${
+									isActive
+										? "bg-[#34B27B]/20 text-[#34B27B]"
+										: "text-white/55 hover:bg-white/10 hover:text-white/85"
+								} disabled:opacity-40`}
+								onClick={() => void selectCaptureMode(mode)}
+								disabled={recording}
+								aria-pressed={isActive}
+								title={label}
+								aria-label={label}
+							>
+								{icon}
+								{trayLayout !== "vertical" && <span>{label}</span>}
+							</button>
+						);
+					})}
+					{hasCaptureRegion && trayLayout !== "vertical" && (
+						<span className="mr-1 rounded bg-[#34B27B]/20 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#34B27B]">
+							{t("hud.regionBadge")}
+						</span>
+					)}
+				</div>
 
 				{/* Audio controls group */}
 				<div
@@ -922,11 +1079,19 @@ export function LaunchWindow() {
 							>
 								<button
 									type="button"
-									className={hudAuxIconBtnClasses}
+									className={`${hudAuxIconBtnClasses} ${
+										trayLayout === "vertical" ? "" : "min-w-[52px] gap-1 px-2"
+									} border border-[#34B27B]/35 bg-[#34B27B]/10`}
 									onClick={() => void addRecordingMark()}
 									data-testid="launch-mark-button"
 								>
-									{getIcon("mark", markCount > 0 ? "text-[#34B27B]" : "text-white/70")}
+									{getIcon("mark", "text-[#34B27B]")}
+									{trayLayout !== "vertical" && (
+										<span className="text-[10px] font-semibold text-[#34B27B]">
+											{t("hud.markLabel")}
+											{markCount > 0 ? ` ${markCount}` : ""}
+										</span>
+									)}
 								</button>
 							</Tooltip>
 						)}
@@ -947,10 +1112,13 @@ export function LaunchWindow() {
 					<Tooltip content={t("tooltips.openStudio")}>
 						<button
 							data-testid="launch-open-studio-button"
-							className={`${hudIconBtnClasses} ${styles.electronNoDrag}`}
+							className={`${hudGroupClasses} h-8 gap-1.5 px-2.5 ${styles.electronNoDrag}`}
 							onClick={() => window.electronAPI.switchToEditor()}
 						>
-							<Clapperboard size={ICON_SIZE} className="text-white/60" />
+							<Clapperboard size={16} className="text-[#34B27B]" />
+							{trayLayout !== "vertical" && (
+								<span className="text-[11px] font-semibold text-white/85">Studio</span>
+							)}
 						</button>
 					</Tooltip>
 				)}

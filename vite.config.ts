@@ -16,7 +16,12 @@ export default defineConfig({
 					return startup(["."], { env });
 				},
 				vite: {
-					build: {},
+					build: {
+						rollupOptions: {
+							// CJS-only native addon (exports.require only) — keep out of the ESM bundle.
+							external: ["electron-native-share"],
+						},
+					},
 				},
 			},
 			preload: {

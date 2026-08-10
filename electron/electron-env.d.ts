@@ -31,7 +31,7 @@ interface Window {
 		switchToEditor: () => Promise<void>;
 		switchToHud: () => Promise<void>;
 		startNewRecording: () => Promise<{ success: boolean; error?: string }>;
-		openSourceSelector: () => Promise<{
+		openSourceSelector: (tab?: "screens" | "windows") => Promise<{
 			opened: boolean;
 			reason?: string;
 			access?: {
@@ -41,6 +41,17 @@ interface Window {
 				error?: string;
 			};
 		}>;
+		showRecordingDone: (payload: {
+			path: string;
+			markCount: number;
+			hasRegion: boolean;
+		}) => Promise<{ success: boolean; error?: string }>;
+		getRecordingDonePayload: () => Promise<{
+			success: boolean;
+			payload?: { path: string; markCount: number; hasRegion: boolean } | null;
+		}>;
+		recordingDoneContinue: () => Promise<{ success: boolean }>;
+		recordingDoneRerecord: () => Promise<{ success: boolean }>;
 		selectSource: (source: ProcessedDesktopSource) => Promise<ProcessedDesktopSource | null>;
 		getSelectedSource: () => Promise<ProcessedDesktopSource | null>;
 		openRegionPicker: (displayId?: string) => Promise<{
@@ -83,6 +94,7 @@ interface Window {
 			status: string;
 			error?: string;
 		}>;
+		openScreenRecordingSettings: () => Promise<{ success: boolean; error?: string }>;
 		requestNativeMacCursorAccess: () => Promise<{
 			success: boolean;
 			granted: boolean;

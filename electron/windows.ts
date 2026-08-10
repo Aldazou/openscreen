@@ -228,8 +228,9 @@ export function createEditorWindow(): BrowserWindow {
  * Floating source-selector window for picking a screen or window to record.
  * Frameless, transparent, and follows the user across macOS Spaces.
  */
-export function createSourceSelectorWindow(): BrowserWindow {
+export function createSourceSelectorWindow(tab?: "screens" | "windows"): BrowserWindow {
 	const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+	const tabQuery = tab === "windows" || tab === "screens" ? `&tab=${tab}` : "";
 
 	const win = new BrowserWindow({
 		width: 620,
@@ -258,10 +259,59 @@ export function createSourceSelectorWindow(): BrowserWindow {
 	}
 
 	if (VITE_DEV_SERVER_URL) {
-		win.loadURL(VITE_DEV_SERVER_URL + "?windowType=source-selector");
+		win.loadURL(VITE_DEV_SERVER_URL + `?windowType=source-selector${tabQuery}`);
 	} else {
 		win.loadFile(path.join(RENDERER_DIST, "index.html"), {
-			query: { windowType: "source-selector" },
+			query: {
+				windowType: "source-selector",
+				...(tab === "windows" || tab === "screens" ? { tab } : {}),
+			},
+		});
+	}
+
+	return win;
+}
+
+/**
+ * Post-record handoff window before opening Studio.
+ * Centered, frameless, always-on-top — same glass language as the source picker.
+ */
+export function createRecordingDoneWindow(): BrowserWindow {
+	const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+	const windowWidth = 480;
+	const windowHeight = 320;
+
+	const win = new BrowserWindow({
+		width: windowWidth,
+		height: windowHeight,
+		minWidth: windowWidth,
+		maxWidth: windowWidth,
+		minHeight: windowHeight,
+		maxHeight: windowHeight,
+		x: Math.round((width - windowWidth) / 2),
+		y: Math.round((height - windowHeight) / 2),
+		frame: false,
+		resizable: false,
+		alwaysOnTop: true,
+		transparent: true,
+		backgroundColor: "#00000000",
+		webPreferences: {
+			preload: path.join(__dirname, "preload.mjs"),
+			additionalArguments: [ASSET_BASE_URL_ARG],
+			nodeIntegration: false,
+			contextIsolation: true,
+		},
+	});
+
+	if (process.platform === "darwin") {
+		win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+	}
+
+	if (VITE_DEV_SERVER_URL) {
+		win.loadURL(VITE_DEV_SERVER_URL + "?windowType=recording-done");
+	} else {
+		win.loadFile(path.join(RENDERER_DIST, "index.html"), {
+			query: { windowType: "recording-done" },
 		});
 	}
 

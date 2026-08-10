@@ -1321,15 +1321,44 @@ async function loadRecordedSessionForVideoPath(
 	}
 }
 
+type RecordingDonePayload = {
+	path: string;
+	markCount: number;
+	hasRegion: boolean;
+};
+
+let pendingRecordingDone: RecordingDonePayload | null = null;
+
+function normalizeRecordingDonePayload(raw: unknown): RecordingDonePayload | null {
+	if (!raw || typeof raw !== "object") return null;
+	const candidate = raw as {
+		path?: unknown;
+		markCount?: unknown;
+		hasRegion?: unknown;
+	};
+	if (typeof candidate.path !== "string") return null;
+	const markCount =
+		typeof candidate.markCount === "number" && Number.isFinite(candidate.markCount)
+			? Math.max(0, Math.floor(candidate.markCount))
+			: 0;
+	return {
+		path: candidate.path,
+		markCount,
+		hasRegion: Boolean(candidate.hasRegion),
+	};
+}
+
 export function registerIpcHandlers(
 	createEditorWindow: () => void,
-	createSourceSelectorWindow: () => BrowserWindow,
+	createSourceSelectorWindow: (tab?: "screens" | "windows") => BrowserWindow,
 	createCountdownOverlayWindow: () => BrowserWindow,
 	getMainWindow: () => BrowserWindow | null,
 	getSourceSelectorWindow: () => BrowserWindow | null,
 	getCountdownOverlayWindow?: () => BrowserWindow | null,
 	onRecordingStateChange?: (recording: boolean, sourceName: string) => void,
 	_switchToHud?: () => void,
+	createRecordingDoneWindow?: () => BrowserWindow,
+	getRecordingDoneWindow?: () => BrowserWindow | null,
 ) {
 	async function requestScreenAccess() {
 		if (process.platform !== "darwin") {
@@ -1369,15 +1398,40 @@ export function registerIpcHandlers(
 	}
 
 	ipcMain.handle("get-sources", async (_, opts) => {
-		const sources = await desktopCapturer.getSources(opts);
-		lastEnumeratedSources = new Map(sources.map((source) => [source.id, source]));
-		return sources.map((source) => ({
-			id: source.id,
-			name: source.name,
-			display_id: source.display_id,
-			thumbnail: source.thumbnail ? source.thumbnail.toDataURL() : null,
-			appIcon: source.appIcon ? source.appIcon.toDataURL() : null,
-		}));
+		try {
+			const sources = await desktopCapturer.getSources(opts);
+			lastEnumeratedSources = new Map(sources.map((source) => [source.id, source]));
+			return sources.map((source) => ({
+				id: source.id,
+				name: source.name,
+				display_id: source.display_id,
+				thumbnail: source.thumbnail ? source.thumbnail.toDataURL() : null,
+				appIcon: source.appIcon ? source.appIcon.toDataURL() : null,
+			}));
+		} catch (error) {
+			// macOS often throws when Screen Recording is denied; return [] so the
+			// renderer can show permission UX instead of an unhandled IPC rejection.
+			console.error("Failed to get sources:", error);
+			lastEnumeratedSources = new Map();
+			return [];
+		}
+	});
+
+	ipcMain.handle("open-screen-recording-settings", async () => {
+		if (process.platform !== "darwin") {
+			return { success: false, error: "Only available on macOS" };
+		}
+		try {
+			await shell.openExternal(
+				"x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture",
+			);
+			return { success: true };
+		} catch (error) {
+			return {
+				success: false,
+				error: error instanceof Error ? error.message : String(error),
+			};
+		}
 	});
 
 	ipcMain.handle("select-source", async (_, source: SelectedSource) => {
@@ -1596,7 +1650,8 @@ export function registerIpcHandlers(
 		}
 	});
 
-	ipcMain.handle("open-source-selector", async () => {
+	ipcMain.handle("open-source-selector", async (_event, tab?: unknown) => {
+		const initialTab = tab === "windows" || tab === "screens" ? tab : undefined;
 		const access = await requestScreenAccess();
 		if (!access.granted) {
 			if (process.platform === "darwin" && access.status !== "not-determined") {
@@ -1628,12 +1683,63 @@ export function registerIpcHandlers(
 		}
 
 		const sourceSelectorWin = getSourceSelectorWindow();
-		if (sourceSelectorWin) {
+		// Recreate when a specific tab is requested so the query param sticks;
+		// otherwise just focus an already-open picker.
+		if (sourceSelectorWin && !initialTab) {
 			sourceSelectorWin.focus();
 			return { opened: true };
 		}
-		createSourceSelectorWindow();
+		// Wrapper closes any existing picker before creating a new one.
+		createSourceSelectorWindow(initialTab);
 		return { opened: true };
+	});
+
+	ipcMain.handle("show-recording-done", (_event, payload: unknown) => {
+		const normalized = normalizeRecordingDonePayload(payload);
+		if (!normalized) {
+			return { success: false, error: "Invalid recording-done payload" };
+		}
+		pendingRecordingDone = normalized;
+		const existing = getRecordingDoneWindow?.();
+		if (existing && !existing.isDestroyed()) {
+			existing.focus();
+			return { success: true };
+		}
+		createRecordingDoneWindow?.();
+		return { success: true };
+	});
+
+	ipcMain.handle("get-recording-done-payload", () => {
+		return { success: true, payload: pendingRecordingDone };
+	});
+
+	ipcMain.handle("recording-done-continue", () => {
+		const doneWindow = getRecordingDoneWindow?.();
+		if (doneWindow && !doneWindow.isDestroyed()) {
+			doneWindow.close();
+		}
+		pendingRecordingDone = null;
+		// createEditorWindow already closes the current mainWindow (the HUD) before
+		// opening the editor.
+		createEditorWindow();
+		return { success: true };
+	});
+
+	ipcMain.handle("recording-done-rerecord", () => {
+		const doneWindow = getRecordingDoneWindow?.();
+		if (doneWindow && !doneWindow.isDestroyed()) {
+			doneWindow.close();
+		}
+		pendingRecordingDone = null;
+		const main = getMainWindow();
+		if (main && !main.isDestroyed()) {
+			if (main.isMinimized()) main.restore();
+			main.show();
+			main.focus();
+		} else {
+			_switchToHud?.();
+		}
+		return { success: true };
 	});
 
 	ipcMain.handle("switch-to-editor", () => {

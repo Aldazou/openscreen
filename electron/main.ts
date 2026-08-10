@@ -23,6 +23,7 @@ import {
 	createCountdownOverlayWindow,
 	createEditorWindow,
 	createHudOverlayWindow,
+	createRecordingDoneWindow,
 	createSourceSelectorWindow,
 } from "./windows";
 
@@ -81,6 +82,7 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
 // Window references
 let mainWindow: BrowserWindow | null = null;
 let sourceSelectorWindow: BrowserWindow | null = null;
+let recordingDoneWindow: BrowserWindow | null = null;
 let countdownOverlayWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let selectedSourceName = "";
@@ -92,6 +94,24 @@ const defaultTrayIcon = getTrayIcon("openscreen.png", trayIconSize);
 const recordingTrayIcon = getTrayIcon("rec-button.png", trayIconSize);
 
 function createWindow() {
+	// Always open Studio first so Import / Open Project work immediately.
+	// Recording HUD is opened explicitly via Record / global shortcut / tray.
+	createEditorWindowWrapper();
+}
+
+function showHudWindow() {
+	if (mainWindow && !mainWindow.isDestroyed() && isEditorWindow(mainWindow)) {
+		isForceClosing = true;
+		mainWindow.close();
+		isForceClosing = false;
+		mainWindow = null;
+	}
+	if (mainWindow && !mainWindow.isDestroyed()) {
+		if (mainWindow.isMinimized()) mainWindow.restore();
+		mainWindow.show();
+		mainWindow.focus();
+		return;
+	}
 	mainWindow = createHudOverlayWindow();
 }
 
@@ -407,12 +427,35 @@ function createEditorWindowWrapper() {
 	});
 }
 
-function createSourceSelectorWindowWrapper() {
-	sourceSelectorWindow = createSourceSelectorWindow();
-	sourceSelectorWindow.on("closed", () => {
+function createSourceSelectorWindowWrapper(tab?: "screens" | "windows") {
+	if (sourceSelectorWindow && !sourceSelectorWindow.isDestroyed()) {
+		const previous = sourceSelectorWindow;
 		sourceSelectorWindow = null;
+		previous.close();
+	}
+	const win = createSourceSelectorWindow(tab);
+	sourceSelectorWindow = win;
+	win.on("closed", () => {
+		if (sourceSelectorWindow === win) {
+			sourceSelectorWindow = null;
+		}
 	});
-	return sourceSelectorWindow;
+	return win;
+}
+
+function createRecordingDoneWindowWrapper() {
+	if (recordingDoneWindow && !recordingDoneWindow.isDestroyed()) {
+		recordingDoneWindow.focus();
+		return recordingDoneWindow;
+	}
+	const win = createRecordingDoneWindow();
+	recordingDoneWindow = win;
+	win.on("closed", () => {
+		if (recordingDoneWindow === win) {
+			recordingDoneWindow = null;
+		}
+	});
+	return win;
 }
 
 function createCountdownOverlayWindowWrapper() {
@@ -532,13 +575,7 @@ app.whenReady().then(async () => {
 	await ensureRecordingsDir();
 
 	function switchToHudWrapper() {
-		if (mainWindow) {
-			isForceClosing = true;
-			mainWindow.close();
-			isForceClosing = false;
-			mainWindow = null;
-		}
-		showMainWindow();
+		showHudWindow();
 	}
 
 	registerIpcHandlers(
@@ -557,6 +594,8 @@ app.whenReady().then(async () => {
 			}
 		},
 		switchToHudWrapper,
+		createRecordingDoneWindowWrapper,
+		() => recordingDoneWindow,
 	);
 
 	await loadAndRegisterGlobalShortcut(showMainWindow);

@@ -48,6 +48,23 @@ const AUDIO_BITRATE_SYSTEM = 192_000;
 const MIC_GAIN_BOOST = 1.4;
 const WEBCAM_TARGET_FRAME_RATE = 30;
 
+/** After a successful stop (not cancel), show the Done window instead of jumping straight to Studio. */
+async function presentRecordingDone(options: {
+	path?: string | null;
+	session?: {
+		screenVideoPath?: string;
+		marks?: unknown[];
+		cropRegion?: unknown;
+	} | null;
+}): Promise<void> {
+	const path = options.path || options.session?.screenVideoPath || "";
+	await window.electronAPI.showRecordingDone({
+		path,
+		markCount: Array.isArray(options.session?.marks) ? options.session.marks.length : 0,
+		hasRegion: Boolean(options.session?.cropRegion),
+	});
+}
+
 type UseScreenRecorderReturn = {
 	recording: boolean;
 	paused: boolean;
@@ -447,7 +464,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 						await window.electronAPI.setCurrentVideoPath(result.path);
 					}
 
-					await window.electronAPI.switchToEditor();
+					await presentRecordingDone({ path: result.path, session: result.session });
 				} catch (error) {
 					console.error("Error saving recording:", error);
 				} finally {
@@ -554,7 +571,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 					await window.electronAPI.setCurrentVideoPath(result.path);
 				}
 
-				await window.electronAPI.switchToEditor();
+				await presentRecordingDone({ path: result.path, session: storedSession });
 				return true;
 			} catch (error) {
 				console.error("Error saving native Windows recording:", error);
@@ -654,7 +671,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 					await window.electronAPI.setCurrentVideoPath(result.path);
 				}
 
-				await window.electronAPI.switchToEditor();
+				await presentRecordingDone({ path: result.path, session: result.session });
 				return true;
 			} catch (error) {
 				console.error("Error saving native macOS recording:", error);

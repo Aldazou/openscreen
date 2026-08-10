@@ -103,4 +103,23 @@ describe("user preferences", () => {
 
 		expect(loadUserPreferences().trayLayout).toBe("horizontal");
 	});
+
+	it("persists the last capture mode preference", () => {
+		saveUserPreferences({ lastCaptureMode: "region", pendingRegionPick: true });
+
+		const prefs = loadUserPreferences();
+		expect(prefs.lastCaptureMode).toBe("region");
+		expect(prefs.pendingRegionPick).toBe(true);
+	});
+
+	it("falls back to the default capture mode for invalid stored values", () => {
+		localStorage.setItem(
+			"openscreen_user_preferences",
+			JSON.stringify({ lastCaptureMode: "display", pendingRegionPick: "yes" }),
+		);
+
+		const prefs = loadUserPreferences();
+		expect(prefs.lastCaptureMode).toBe("screen");
+		expect(prefs.pendingRegionPick).toBe(false);
+	});
 });
