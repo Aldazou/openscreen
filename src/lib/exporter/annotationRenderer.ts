@@ -7,59 +7,10 @@ import {
 	getNormalizedMosaicBlockSize,
 	normalizeBlurType,
 } from "@/lib/blurEffects";
+import { applyReveal, getLineBackgroundRect, layoutText } from "@/lib/text/textLayout";
 
 let blurScratchCanvas: HTMLCanvasElement | null = null;
 let blurScratchCtx: CanvasRenderingContext2D | null = null;
-
-// Han/Hiragana/Katakana/Hangul code points, to split CJK text at character
-// boundaries during wrap (CJK has no word-separating whitespace). Script
-// escapes need ES2018+; tsconfig targets ES2020.
-const CJK_CHAR = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
-
-type GraphemeSegmenter = {
-	segment(value: string): Iterable<{ segment: string }>;
-};
-
-type IntlWithSegmenter = typeof Intl & {
-	Segmenter?: new (
-		locales?: string | string[],
-		options?: { granularity?: "grapheme" },
-	) => GraphemeSegmenter;
-};
-
-const Segmenter = (Intl as IntlWithSegmenter).Segmenter;
-const graphemeSegmenter =
-	typeof Segmenter === "function" ? new Segmenter(undefined, { granularity: "grapheme" }) : null;
-
-function splitGraphemes(value: string): string[] {
-	if (!graphemeSegmenter) return Array.from(value);
-	return Array.from(graphemeSegmenter.segment(value), ({ segment }) => segment);
-}
-
-function tokenizeForWrap(line: string): string[] {
-	// Split Latin on whitespace (kept as its own token) and split CJK runs into
-	// individual chars so each is breakable, mirroring the editor's CSS
-	// word-break: break-word for CJK.
-	const tokens: string[] = [];
-	let buffer = "";
-	const chars = Array.from(line);
-	const flushBuffer = () => {
-		if (buffer) {
-			tokens.push(...buffer.split(/(\s+)/).filter((s) => s.length > 0));
-			buffer = "";
-		}
-	};
-	for (const ch of chars) {
-		if (CJK_CHAR.test(ch)) {
-			flushBuffer();
-			tokens.push(ch);
-		} else {
-			buffer += ch;
-		}
-	}
-	flushBuffer();
-	return tokens;
-}
 
 // SVG path data for each arrow direction
 const ARROW_PATHS: Record<ArrowDirection, string[]> = {
@@ -281,13 +232,35 @@ function renderText(
 	const fontWeight = style.fontWeight === "bold" ? "bold" : "normal";
 	const fontStyle = style.fontStyle === "italic" ? "italic" : "normal";
 	const scaledFontSize = style.fontSize * scaleFactor;
-	ctx.font = `${fontStyle} ${fontWeight} ${scaledFontSize}px ${style.fontFamily}`;
-	ctx.textBaseline = "middle";
+
+	// `x`/`y`/`width`/`height` here are already at export resolution (scaled
+	// by `scaleFactor`); layoutText() wants the unscaled preview-CSS-px box
+	// dimensions and applies scaleFactor itself, so divide back out. This is
+	// an exact round trip: `width` was produced as
+	// `(annotation.size.width / 100) * canvasWidth`, and `canvasWidth` is
+	// `previewWidth * scaleFactor` — the same box AnnotationOverlay lays out,
+	// just at a different resolution.
+	const layout = layoutText({
+		content: annotation.content,
+		fontSize: style.fontSize,
+		fontFamily: style.fontFamily,
+		fontWeight,
+		fontStyle,
+		boxWidth: width / scaleFactor,
+		boxHeight: height / scaleFactor,
+		padding: 8,
+		scaleFactor,
+	});
+
+	ctx.font = layout.fontString;
+	// Alphabetic (not "middle"): see textLayout.ts's module doc comment for
+	// why the two renderers now share one explicit baselineY per line rather
+	// than each independently centering a line-height box.
+	ctx.textBaseline = "alphabetic";
 
 	const containerPadding = 8 * scaleFactor;
 
 	let textX = x;
-	let textY = y + height / 2;
 
 	if (style.textAlign === "center") {
 		textX = x + width / 2;
@@ -300,81 +273,52 @@ function renderText(
 		ctx.textAlign = "left";
 	}
 
-	const availableWidth = width - containerPadding * 2;
-	const rawLines = annotation.content.split("\n");
-	const lines: string[] = [];
-	for (const rawLine of rawLines) {
-		if (!rawLine) {
-			lines.push("");
-			continue;
-		}
-		const tokens = tokenizeForWrap(rawLine);
-		let current = "";
-		for (const token of tokens) {
-			const test = current + token;
-			if (current && ctx.measureText(test).width > availableWidth) {
-				lines.push(current);
-				current = token.trimStart();
-			} else {
-				current = test;
-			}
-		}
-		if (current) lines.push(current);
-	}
-	const lineHeight = scaledFontSize * 1.4;
+	// Semantic C: graphemes reveal sequentially across the whole block (line 1
+	// completes before line 2 begins), computed once as pure data — see
+	// applyReveal()'s doc comment in textLayout.ts. Each returned line's
+	// `.text`/`.width` already reflect how much of *that* line is currently
+	// visible, so nothing below needs its own grapheme-slicing math anymore.
+	const revealedLines = applyReveal(layout, animationState.revealProgress);
 
-	const startY = textY - ((lines.length - 1) * lineHeight) / 2;
+	revealedLines.forEach((line) => {
+		if (!line.text) return; // not reached yet — draws nothing, no background either
 
-	lines.forEach((line, index) => {
-		const currentY = startY + index * lineHeight;
-		const revealProgress = animationState.revealProgress;
-		const graphemes = splitGraphemes(line);
-		const visibleCount = Math.ceil(graphemes.length * revealProgress);
-		const visibleLine = revealProgress >= 1 ? line : graphemes.slice(0, visibleCount).join("");
-		if (!visibleLine && revealProgress < 1) return;
+		const baselineY = y + line.baselineY;
 
 		const previousAlign = ctx.textAlign;
-		const fullMetrics = ctx.measureText(line);
 		let startX = textX;
 
 		if (ctx.textAlign === "center") {
-			startX = textX - fullMetrics.width / 2;
+			startX = textX - line.width / 2;
 			ctx.textAlign = "left";
 		} else if (ctx.textAlign === "right" || ctx.textAlign === "end") {
-			startX = textX - fullMetrics.width;
+			startX = textX - line.width;
 			ctx.textAlign = "left";
 		}
 
 		if (style.backgroundColor && style.backgroundColor !== "transparent") {
-			const metrics = ctx.measureText(visibleLine);
-			const verticalPadding = scaledFontSize * 0.1;
-			const horizontalPadding = scaledFontSize * 0.2;
-			const borderRadius = 4 * scaleFactor;
-
-			let bgX = startX - horizontalPadding;
-			const bgWidth = metrics.width + horizontalPadding * 2;
-
-			const contentHeight = scaledFontSize * 1.4;
-			const bgHeight = contentHeight + verticalPadding * 2;
-			const bgY = currentY - bgHeight / 2;
-
-			if (previousAlign === "left" || previousAlign === "start") {
-				bgX = textX - horizontalPadding;
+			const bgRect = getLineBackgroundRect(layout, line, {
+				textAlign: style.textAlign,
+				fontSize: style.fontSize,
+				boxWidth: width / scaleFactor,
+				padding: 8,
+				scaleFactor,
+			});
+			if (bgRect) {
+				ctx.fillStyle = style.backgroundColor;
+				ctx.beginPath();
+				ctx.roundRect(x + bgRect.x, y + bgRect.y, bgRect.width, bgRect.height, bgRect.borderRadius);
+				ctx.fill();
 			}
-
-			ctx.fillStyle = style.backgroundColor;
-			ctx.beginPath();
-			ctx.roundRect(bgX, bgY, bgWidth, bgHeight, borderRadius);
-			ctx.fill();
 		}
 
 		ctx.fillStyle = style.color;
-		ctx.fillText(visibleLine, startX, currentY);
+		ctx.fillText(line.text, startX, baselineY);
 
 		if (style.textDecoration === "underline") {
-			const metrics = ctx.measureText(visibleLine);
+			const lineCenterY = baselineY - (layout.ascent - layout.descent) / 2;
 			let underlineX = startX;
-			const underlineY = currentY + scaledFontSize * 0.15;
+			const underlineY = lineCenterY + scaledFontSize * 0.15;
 
 			if (previousAlign === "left" || previousAlign === "start") {
 				underlineX = textX;
@@ -384,7 +328,7 @@ function renderText(
 			ctx.lineWidth = Math.max(1, scaledFontSize / 16);
 			ctx.beginPath();
 			ctx.moveTo(underlineX, underlineY);
-			ctx.lineTo(underlineX + metrics.width, underlineY);
+			ctx.lineTo(underlineX + line.width, underlineY);
 			ctx.stroke();
 		}
 

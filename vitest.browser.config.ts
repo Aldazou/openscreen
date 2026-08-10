@@ -25,4 +25,21 @@ export default defineConfig({
 		},
 	},
 	assetsInclude: ["**/*.webm"],
+	// Pre-bundle these so a cold cache doesn't trigger a mid-run Vite
+	// dependency-optimization reload (Vite's own warning: "may cause tests to
+	// fail, lead to flaky behaviour or duplicated test runs"). Needed once
+	// AnnotationOverlay.tsx (react-rnd, clsx, tailwind-merge) was mounted via
+	// @testing-library/react in a *.browser.test.tsx file.
+	optimizeDeps: {
+		include: [
+			"react",
+			"react/jsx-dev-runtime",
+			"react-dom",
+			"react-dom/client",
+			"@testing-library/react",
+			"react-rnd",
+			"clsx",
+			"tailwind-merge",
+		],
+	},
 });

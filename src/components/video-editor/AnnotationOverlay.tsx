@@ -6,6 +6,7 @@ import {
 	getMosaicGridOverlayColor,
 	getNormalizedMosaicBlockSize,
 } from "@/lib/blurEffects";
+import { applyReveal, getLineBackgroundRect, layoutText } from "@/lib/text/textLayout";
 import { cn } from "@/lib/utils";
 import { getArrowComponent } from "./ArrowSvgs";
 import {
@@ -288,49 +289,153 @@ export function AnnotationOverlay({
 		switch (annotation.type) {
 			case "text": {
 				const animationState = getTextAnimationState(annotation, currentTimeMs);
-				const typewriterClip =
-					animationState.revealProgress < 1
-						? `inset(0 ${100 - animationState.revealProgress * 100}% 0 0)`
-						: undefined;
+				// scale/translate/opacity below are pre-existing (getTextAnimationState,
+				// fade/rise/pop/slide-left/pulse) and out of scope for this rewire —
+				// kept bit-for-bit, just relocated from the single wrapped <span> onto
+				// the block wrapper below since there's no longer one element that
+				// contains all the text.
+				//
+				// Typewriter reveal is NOT kept bit-for-bit: it moved from a CSS
+				// clip-path pixel wipe (parallel across all lines) to semantic C —
+				// see applyReveal()'s doc comment in textLayout.ts — per explicit
+				// direction. `clipPath`/`WebkitClipPath` are gone entirely; the
+				// revealed *text itself* is what's rendered per line below.
+
+				// Pre-compute line breaks and vertical position with the same
+				// module the export canvas renderer uses (src/lib/text/textLayout.ts),
+				// instead of handing raw content to the browser and trusting its
+				// own wrapping — that's what let preview and export drift apart.
+				// `scaleFactor: 1` because this is the unscaled preview; `padding: 8`
+				// matches the box's own p-2 (applied below via explicit left/right
+				// insets rather than a CSS `padding` class — see note below).
+				const layout = layoutText({
+					content: annotation.content,
+					fontSize: annotation.style.fontSize,
+					fontFamily: annotation.style.fontFamily,
+					fontWeight: annotation.style.fontWeight,
+					fontStyle: annotation.style.fontStyle,
+					boxWidth: width,
+					boxHeight: height,
+					padding: 8,
+					scaleFactor: 1,
+				});
+				const revealedLines = applyReveal(layout, animationState.revealProgress);
+				const hasBackground =
+					!!annotation.style.backgroundColor && annotation.style.backgroundColor !== "transparent";
+
 				return (
 					<div
-						className="w-full h-full flex items-center p-2 overflow-hidden"
-						style={{
-							justifyContent:
-								annotation.style.textAlign === "left"
-									? "flex-start"
-									: annotation.style.textAlign === "right"
-										? "flex-end"
-										: "center",
-							alignItems: "center",
-						}}
+						className="w-full h-full overflow-hidden"
+						style={{ position: "relative" }}
+						data-testid="annotation-text-box"
 					>
-						<span
+						{/*
+						 * Animated wrapper spans the FULL box (no padding inset) —
+						 * background rects below are positioned in full-box
+						 * coordinates via getLineBackgroundRect(), which already
+						 * bakes the 8px container padding into its own math (the
+						 * same way annotationRenderer.ts's canvas path does via
+						 * `x + bgRect.x`). The padded text wrapper nested inside
+						 * establishes its own, separate 8px-inset coordinate space
+						 * for the text lines — see its own comment below for why
+						 * that one can't just reuse full-box coordinates.
+						 */}
+						<div
+							data-testid="annotation-text-block"
 							style={{
-								color: annotation.style.color,
-								backgroundColor: annotation.style.backgroundColor,
-								fontSize: `${annotation.style.fontSize}px`,
-								fontFamily: annotation.style.fontFamily,
-								fontWeight: annotation.style.fontWeight,
-								fontStyle: annotation.style.fontStyle,
-								textDecoration: annotation.style.textDecoration,
-								textAlign: annotation.style.textAlign,
+								position: "absolute",
+								left: 0,
+								right: 0,
+								top: 0,
+								bottom: 0,
 								opacity: animationState.opacity,
 								transform: `translate(${animationState.translateX}px, ${animationState.translateY}px) scale(${animationState.scale})`,
 								transformOrigin: "center",
-								clipPath: typewriterClip,
-								WebkitClipPath: typewriterClip,
-								wordBreak: "break-word",
-								whiteSpace: "pre-wrap",
-								boxDecorationBreak: "clone",
-								WebkitBoxDecorationBreak: "clone",
-								padding: "0.1em 0.2em",
-								borderRadius: "4px",
-								lineHeight: "1.4",
 							}}
 						>
-							{annotation.content}
-						</span>
+							{hasBackground &&
+								revealedLines.map((line) => {
+									const bgRect = getLineBackgroundRect(layout, line, {
+										textAlign: annotation.style.textAlign,
+										fontSize: annotation.style.fontSize,
+										boxWidth: width,
+										padding: 8,
+										scaleFactor: 1,
+									});
+									if (!bgRect) return null; // not reached yet: no background
+									return (
+										<div
+											key={`bg-${line.index}`}
+											data-testid="annotation-text-line-background"
+											style={{
+												position: "absolute",
+												left: `${bgRect.x}px`,
+												top: `${bgRect.y}px`,
+												width: `${bgRect.width}px`,
+												height: `${bgRect.height}px`,
+												borderRadius: `${bgRect.borderRadius}px`,
+												backgroundColor: annotation.style.backgroundColor,
+											}}
+										/>
+									);
+								})}
+							{/*
+							 * `p-2`'s 8px is applied here as explicit left/right insets
+							 * rather than a CSS `padding` class: an absolutely positioned
+							 * descendant's containing block is its ancestor's *padding*
+							 * box, so a `padding` class on this element would sit
+							 * outside where its abs-positioned line children measure
+							 * "0", silently reintroducing the parity gap this rewire
+							 * exists to close. (No `top`/`bottom` inset — vertical
+							 * centering intentionally ignores padding; see
+							 * textLayout.ts's blockTop comment for why that's safe.)
+							 */}
+							<div style={{ position: "absolute", left: 8, right: 8, top: 0, bottom: 0 }}>
+								{revealedLines.map((line) => (
+									<div
+										key={line.index}
+										data-testid="annotation-text-line"
+										style={{
+											position: "absolute",
+											left: 0,
+											right: 0,
+											// Zero-leading box: height/lineHeight set to exactly
+											// ascent+descent so the browser's own half-leading
+											// contributes nothing, and the glyph baseline lands
+											// at `top + ascent` — i.e. exactly `line.baselineY`.
+											// See textLayout.ts's module doc comment.
+											top: `${line.baselineY - layout.ascent}px`,
+											height: `${layout.ascent + layout.descent}px`,
+											lineHeight: `${layout.ascent + layout.descent}px`,
+											// Pre-computed lines must never be re-wrapped by the
+											// browser — that's the whole point of this rewire.
+											whiteSpace: "pre",
+											overflow: "hidden",
+											textAlign: annotation.style.textAlign,
+											// Horizontal-only counterpart of the span's old
+											// `padding: "0.1em 0.2em"` (matches textLayout.ts's
+											// default inlinePaddingEm.x, which already narrowed
+											// availableWidth by this same amount on both sides).
+											// The vertical 0.1em is now handled by the separate
+											// background rect above (getLineBackgroundRect),
+											// which can safely use real padding since it isn't
+											// also carrying the baseline-critical zero-leading
+											// box trick this element depends on.
+											paddingLeft: "0.2em",
+											paddingRight: "0.2em",
+											color: annotation.style.color,
+											fontSize: `${annotation.style.fontSize}px`,
+											fontFamily: annotation.style.fontFamily,
+											fontWeight: annotation.style.fontWeight,
+											fontStyle: annotation.style.fontStyle,
+											textDecoration: annotation.style.textDecoration,
+										}}
+									>
+										{line.text}
+									</div>
+								))}
+							</div>
+						</div>
 					</div>
 				);
 			}
