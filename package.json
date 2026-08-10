@@ -15,6 +15,7 @@
 	"scripts": {
 		"dev": "vite",
 		"build": "tsc && vite build && electron-builder",
+		"typecheck": "tsc --noEmit",
 		"lint": "biome check .",
 		"lint:fix": "biome check --write .",
 		"format": "biome format --write .",
