@@ -413,11 +413,22 @@ export async function renderAnnotations(
 
 			case "figure":
 				if (annotation.figureData) {
+					// Same `|| <default>` fallbacks AnnotationOverlay.tsx's renderArrow()
+					// applies (arrowDirection || "right", color || "#34B27B",
+					// strokeWidth || 4) — this call site used to pass the raw
+					// figureData fields straight through with no fallback. In
+					// practice figureData is always populated via
+					// `{...DEFAULT_FIGURE_DATA, ...region.figureData}` on
+					// create/load, and the stroke-width slider is bounded [1, 6],
+					// so a falsy value isn't reachable today; this only guards
+					// against future/malformed data silently diverging (export
+					// drawing nothing for a falsy arrowDirection, an invisible
+					// 0-width stroke, etc.) instead of matching preview's fallback.
 					renderArrow(
 						ctx,
-						annotation.figureData.arrowDirection,
-						annotation.figureData.color,
-						annotation.figureData.strokeWidth,
+						annotation.figureData.arrowDirection || "right",
+						annotation.figureData.color || "#34B27B",
+						annotation.figureData.strokeWidth || 4,
 						x,
 						y,
 						width,
