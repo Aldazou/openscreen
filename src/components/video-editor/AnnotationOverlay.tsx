@@ -4,18 +4,13 @@ import { getTextAnimationState } from "@/lib/annotationTextAnimation";
 import {
 	getBlurOverlayColor,
 	getMosaicGridOverlayColor,
+	getNormalizedBlurIntensity,
 	getNormalizedMosaicBlockSize,
 } from "@/lib/blurEffects";
 import { applyReveal, getLineBackgroundRect, layoutText } from "@/lib/text/textLayout";
 import { cn } from "@/lib/utils";
 import { getArrowComponent } from "./ArrowSvgs";
-import {
-	type AnnotationRegion,
-	type BlurData,
-	DEFAULT_BLUR_BLOCK_SIZE,
-	DEFAULT_BLUR_DATA,
-	DEFAULT_BLUR_INTENSITY,
-} from "./types";
+import { type AnnotationRegion, type BlurData, DEFAULT_BLUR_DATA } from "./types";
 
 const FREEHAND_POINT_THRESHOLD = 1;
 type PreviewCanvasSource = {
@@ -472,14 +467,19 @@ export function AnnotationOverlay({
 
 			case "blur": {
 				const shape = annotation.blurData?.shape ?? "rectangle";
+				// Both go through the shared normalizers (src/lib/blurEffects.ts) so
+				// preview and export clamp identically — see
+				// getNormalizedBlurIntensity/getNormalizedMosaicBlockSize's parity
+				// test in blurEffects.test.ts. This used to be inline
+				// `Math.max(1, Math.round(annotation.blurData?.intensity ?? DEFAULT_BLUR_INTENSITY))`
+				// for intensity — no upper bound — while export already clamped to
+				// [MIN_BLUR_INTENSITY, MAX_BLUR_INTENSITY]; an out-of-range value
+				// would have rendered a stronger blur in preview than export ships.
 				const blurIntensity = Math.max(
 					1,
-					Math.round(annotation.blurData?.intensity ?? DEFAULT_BLUR_INTENSITY),
+					Math.round(getNormalizedBlurIntensity(annotation.blurData)),
 				);
-				const blockSize = Math.max(
-					1,
-					Math.round(annotation.blurData?.blockSize ?? DEFAULT_BLUR_BLOCK_SIZE),
-				);
+				const blockSize = getNormalizedMosaicBlockSize(annotation.blurData);
 				const activeFreehandPoints =
 					shape === "freehand"
 						? isFreehandDrawing
