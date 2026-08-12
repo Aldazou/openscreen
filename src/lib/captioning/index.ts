@@ -15,3 +15,15 @@ export type {
 	TranscribeMono16kResult,
 } from "./transcribe";
 export { transcribeMono16kToSegments } from "./transcribe";
+export type { FillerRegionOptions, SilenceRegionOptions } from "./transcriptEdits";
+export {
+	DEFAULT_EDGE_PAD_SEC,
+	DEFAULT_SILENCE_RESIDUAL_SEC,
+	DEFAULT_SILENCE_THRESHOLD_SEC,
+	DISCOURSE_MARKERS_BY_LANGUAGE,
+	FILLER_TOKENS_BY_LANGUAGE,
+	findFillerRegions,
+	findSilenceRegions,
+	mergeTrimRegions,
+	normalizeToken,
+} from "./transcriptEdits";
