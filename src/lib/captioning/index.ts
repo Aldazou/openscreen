@@ -7,6 +7,8 @@ export {
 	reconcileAutoCaptionTimelineGaps,
 	splitMergedCaptionsByWordBounds,
 } from "./annotationsFromCaptions";
+export type { CleanupPlan, CleanupPlanOptions } from "./audioCleanup";
+export { applyCleanupPlan, buildCleanupPlan, CLEANUP_REVIEW_FRACTION } from "./audioCleanup";
 export { extractMono16kFromVideoUrl, MAX_CAPTION_AUDIO_SEC } from "./extractMono16k";
 export { shiftTrimRegionsMsForCaptionBuffer, trimLeadingSilenceMono16k } from "./leadingSilence";
 export type {
