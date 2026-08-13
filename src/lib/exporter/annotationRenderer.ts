@@ -8,6 +8,7 @@ import {
 	normalizeBlurType,
 } from "@/lib/blurEffects";
 import { applyReveal, getLineBackgroundRect, layoutText } from "@/lib/text/textLayout";
+import { decodeImageAnnotation, frameAtElapsed } from "./animatedImage";
 
 let blurScratchCanvas: HTMLCanvasElement | null = null;
 let blurScratchCtx: CanvasRenderingContext2D | null = null;
@@ -345,40 +346,41 @@ async function renderImage(
 	y: number,
 	width: number,
 	height: number,
+	currentTimeMs: number,
 ): Promise<void> {
 	if (!annotation.content || !annotation.content.startsWith("data:image")) {
 		return;
 	}
 
-	return new Promise((resolve) => {
-		const img = new Image();
-		img.onload = () => {
-			// Contain within bounds, preserving aspect ratio
-			const imgAspect = img.width / img.height;
-			const boxAspect = width / height;
+	const decoded = await decodeImageAnnotation(annotation.content);
+	// Animate from when the annotation appears, so the same timeline position always
+	// exports the same frame.
+	const frame = frameAtElapsed(decoded, currentTimeMs - annotation.startMs);
+	if (!frame || decoded.width === 0 || decoded.height === 0) return;
 
-			let drawWidth = width;
-			let drawHeight = height;
-			let drawX = x;
-			let drawY = y;
+	// Contain within bounds, preserving aspect ratio
+	const imgAspect = decoded.width / decoded.height;
+	const boxAspect = width / height;
 
-			if (imgAspect > boxAspect) {
-				drawHeight = width / imgAspect;
-				drawY = y + (height - drawHeight) / 2;
-			} else {
-				drawWidth = height * imgAspect;
-				drawX = x + (width - drawWidth) / 2;
-			}
+	let drawWidth = width;
+	let drawHeight = height;
+	let drawX = x;
+	let drawY = y;
 
-			ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
-			resolve();
-		};
-		img.onerror = () => {
-			console.error("[AnnotationRenderer] Failed to load image annotation");
-			resolve();
-		};
-		img.src = annotation.content;
-	});
+	if (imgAspect > boxAspect) {
+		drawHeight = width / imgAspect;
+		drawY = y + (height - drawHeight) / 2;
+	} else {
+		drawWidth = height * imgAspect;
+		drawX = x + (width - drawWidth) / 2;
+	}
+
+	// The preview's <img> scales with the browser's own (high-quality) resampling. Canvas
+	// defaults to "low", which made resized image annotations visibly softer on export.
+	const previousQuality = ctx.imageSmoothingQuality;
+	ctx.imageSmoothingQuality = "high";
+	ctx.drawImage(frame, drawX, drawY, drawWidth, drawHeight);
+	ctx.imageSmoothingQuality = previousQuality;
 }
 
 export async function renderAnnotations(
@@ -408,7 +410,7 @@ export async function renderAnnotations(
 				break;
 
 			case "image":
-				await renderImage(ctx, annotation, x, y, width, height);
+				await renderImage(ctx, annotation, x, y, width, height, currentTimeMs);
 				break;
 
 			case "figure":

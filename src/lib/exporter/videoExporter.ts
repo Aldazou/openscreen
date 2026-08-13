@@ -16,6 +16,7 @@ import {
 import { BackgroundLoadError } from "@/lib/wallpaper";
 import type { CursorRecordingData } from "@/native/contracts";
 import { getPlatform } from "@/utils/platformUtils";
+import { clearImageAnnotationCache } from "./animatedImage";
 import { AudioProcessor } from "./audioEncoder";
 import { FrameRenderer } from "./frameRenderer";
 import { VideoMuxer } from "./muxer";
@@ -627,6 +628,10 @@ export class VideoExporter {
 	}
 
 	private cleanup(): void {
+		// Decoded animated-annotation frames are cached across the whole export; release them
+		// here or their VideoFrames stay pinned until the page reloads.
+		clearImageAnnotationCache();
+
 		if (this.encoder) {
 			try {
 				if (this.encoder.state === "configured") {
