@@ -9,7 +9,7 @@
 // `caption-assets/` is gitignored and shipped via electron-builder `extraResources`.
 
 import { createWriteStream } from "node:fs";
-import { copyFile, mkdir, stat } from "node:fs/promises";
+import { copyFile, lstat, mkdir, stat, symlink, unlink } from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
@@ -136,6 +136,33 @@ async function copyOrtWasm() {
 	}
 }
 
+/**
+ * Packaged builds resolve assets from `process.resourcesPath` (electron-builder copies
+ * `caption-assets/` there via extraResources). Unpackaged runs — i.e. `npm run dev` — resolve
+ * from `<appRoot>/public/` instead, where nothing above ever writes. Without this link,
+ * auto-captions and audio cleanup fail in dev with an opaque `local_files_only` error.
+ *
+ * A symlink rather than a copy: these assets are ~45 MB and `public/` is copied wholesale
+ * into `dist/` by Vite, so a real copy would bloat every renderer build.
+ */
+async function linkForUnpackagedRuns() {
+	const publicLink = path.join(ROOT, "public", "caption-assets");
+	try {
+		const existing = await lstat(publicLink).catch(() => null);
+		if (existing?.isSymbolicLink()) {
+			await unlink(publicLink);
+		} else if (existing) {
+			console.log("  ! public/caption-assets exists and is not a symlink — leaving it alone");
+			return;
+		}
+		await symlink(path.join("..", "caption-assets"), publicLink, "dir");
+		console.log("  + linked public/caption-assets → caption-assets/ (for unpackaged runs)");
+	} catch (err) {
+		// Non-fatal: packaged builds are unaffected, and Windows may refuse symlinks.
+		console.log(`  ! could not link public/caption-assets: ${err.message}`);
+	}
+}
+
 async function main() {
 	console.log(`Fetching caption assets → ${path.relative(ROOT, OUT)}/`);
 	console.log("ONNX Runtime wasm:");
@@ -145,6 +172,7 @@ async function main() {
 	for (const rel of MODEL_FILES) {
 		await download(`${HF_BASE}/${rel}`, path.join(modelDir, rel));
 	}
+	await linkForUnpackagedRuns();
 	console.log("Caption assets ready.");
 }
 

@@ -89,5 +89,27 @@
 			"couldNotOpenTitle": "Could Not Open File",
 			"couldNotOpenMessage": "The file could not be opened. It may have been moved or deleted."
 		}
+	},
+	"audioCleanup": {
+		"button": "Clean up audio",
+		"busy": "Audio cleanup is already in progress.",
+		"analyzing": "Listening for filler words…",
+		"loadingModel": "Loading speech model (first use downloads ~75 MB)…",
+		"transcribing": "Transcribing speech…",
+		"failed": "Could not analyse the audio",
+		"noAudio": "This recording has no audible speech to clean up.",
+		"dialogTitle": "Clean up audio",
+		"dialogDescription": "Review what would be removed. Nothing is cut until you apply.",
+		"nothingFound": "No filler words or dead air found — this take is already clean.",
+		"fillersFound": "{{count}} filler words",
+		"silencesFound": "{{count}} long pauses",
+		"timeSaved": "Removes {{seconds}}s ({{percent}}% of the take)",
+		"includeSilences": "Also shorten long pauses",
+		"includeSilencesHint": "Collapses gaps over 0.7s down to 0.2s. Changes pacing across the whole take.",
+		"phraseGranularity": "Filler-word detection needs word-level timing, which this transcript doesn't have. Only pause shortening is available.",
+		"reviewWarning": "This would remove more than half the recording. Check the timeline before applying.",
+		"apply": "Apply cuts",
+		"cancel": "Cancel",
+		"applied": "Removed {{count}} sections — {{seconds}}s shorter"
 	}
 }

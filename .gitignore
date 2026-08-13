@@ -66,6 +66,8 @@ result-*
 
 # Auto-caption model + ORT wasm — regenerated at build by scripts/fetch-caption-model.mjs
 /caption-assets/
+# Dev-only symlink into the above, created by the same script for unpackaged runs
+/public/caption-assets
 
 # Vitest browser mode attachments
 .vitest-attachments/

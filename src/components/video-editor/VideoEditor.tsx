@@ -26,6 +26,11 @@ import { INITIAL_EDITOR_STATE, useEditorHistory } from "@/hooks/useEditorHistory
 import { type Locale } from "@/i18n/config";
 import { getAvailableLocales, getLocaleName } from "@/i18n/loader";
 import {
+	applyCleanupPlan,
+	buildCleanupPlan,
+	type CaptionSegment,
+	type CaptionTimestampGranularity,
+	CLEANUP_REVIEW_FRACTION,
 	captionSegmentsToAnnotationRegions,
 	extractMono16kFromVideoUrl,
 	MAX_CAPTION_AUDIO_SEC,
@@ -122,6 +127,7 @@ import VideoPlayback, { VideoPlaybackRef } from "./VideoPlayback";
 
 /** Single Sonner slot so auto-caption phases update in place instead of stacking. */
 const AUTO_CAPTION_PROGRESS_TOAST_ID = "auto-caption-progress";
+const AUDIO_CLEANUP_PROGRESS_TOAST_ID = "audio-cleanup-progress";
 
 function isClickInteractionType(interactionType: string | null | undefined) {
 	return (
@@ -358,6 +364,17 @@ export default function VideoEditor() {
 	const [isAutoCaptioning, setIsAutoCaptioning] = useState(false);
 	const [showAutoCaptionsDialog, setShowAutoCaptionsDialog] = useState(false);
 	const [captionWordsMin, setCaptionWordsMin] = useState(2);
+	// Audio cleanup. The transcript is kept so toggling "shorten pauses" re-plans instantly
+	// instead of re-running Whisper, which is the expensive part.
+	const isCleaningAudioRef = useRef(false);
+	const [isCleaningAudio, setIsCleaningAudio] = useState(false);
+	const [showCleanupDialog, setShowCleanupDialog] = useState(false);
+	const [cleanupIncludeSilences, setCleanupIncludeSilences] = useState(false);
+	const [cleanupTranscript, setCleanupTranscript] = useState<{
+		segments: CaptionSegment[];
+		granularity: CaptionTimestampGranularity;
+		durationSec: number;
+	} | null>(null);
 	const [captionWordsMax, setCaptionWordsMax] = useState(7);
 	const exporterRef = useRef<VideoExporter | null>(null);
 
@@ -2473,6 +2490,104 @@ export default function VideoEditor() {
 		[videoPath, trimRegions, pushState, t],
 	);
 
+	// Re-planned locally whenever the silence toggle flips — no re-transcription.
+	const cleanupPlan = useMemo(() => {
+		if (!cleanupTranscript) return null;
+		return buildCleanupPlan(cleanupTranscript.segments, cleanupTranscript.granularity, {
+			removeSilences: cleanupIncludeSilences,
+			language: locale,
+			mediaDurationSec: cleanupTranscript.durationSec,
+			silence: { includeLeading: false },
+		});
+	}, [cleanupTranscript, cleanupIncludeSilences, locale]);
+
+	const analyzeAudioCleanup = useCallback(async () => {
+		if (!videoPath) {
+			toast.error(t("errors.noVideoLoaded"));
+			return;
+		}
+		if (isCleaningAudioRef.current) {
+			toast.error(t("audioCleanup.busy"));
+			return;
+		}
+
+		isCleaningAudioRef.current = true;
+		setIsCleaningAudio(true);
+		toast.loading(t("audioCleanup.analyzing"), { id: AUDIO_CLEANUP_PROGRESS_TOAST_ID });
+		try {
+			// NOTE: this extract → trim → transcribe → offset sequence mirrors
+			// generateAutoCaptions above. Worth extracting once this has settled.
+			const { samples, durationSec } = await extractMono16kFromVideoUrl(videoPath);
+			if (!Number.isFinite(durationSec) || durationSec <= 0 || samples.length < 800) {
+				toast.dismiss(AUDIO_CLEANUP_PROGRESS_TOAST_ID);
+				toast.error(t("audioCleanup.noAudio"));
+				return;
+			}
+
+			const { samples: speechSamples, trimSec } = trimLeadingSilenceMono16k(samples);
+			const usableSamples = speechSamples.length >= 800 ? speechSamples : samples;
+			const appliedTrimSec = speechSamples.length >= 800 ? trimSec : 0;
+			const trimMs = Math.round(appliedTrimSec * 1000);
+
+			const transcribeOptions = {
+				onStatus: (phase: "model" | "transcribe") => {
+					toast.loading(
+						phase === "model" ? t("audioCleanup.loadingModel") : t("audioCleanup.transcribing"),
+						{ id: AUDIO_CLEANUP_PROGRESS_TOAST_ID },
+					);
+				},
+			};
+
+			const { segments: raw, granularity } = await transcribeMono16kToSegments(usableSamples, {
+				trimRegions: shiftTrimRegionsMsForCaptionBuffer(trimRegions, trimMs),
+				...transcribeOptions,
+			});
+
+			if (raw.length === 0) {
+				toast.dismiss(AUDIO_CLEANUP_PROGRESS_TOAST_ID);
+				toast.error(t("audioCleanup.noAudio"));
+				return;
+			}
+
+			// Whisper timed against the shortened buffer; shift back onto the timeline's clock
+			// or every cut lands early by the length of the leading silence.
+			const segments =
+				appliedTrimSec > 0
+					? raw.map((s) => ({
+							...s,
+							startSec: s.startSec + appliedTrimSec,
+							endSec: s.endSec + appliedTrimSec,
+						}))
+					: raw;
+
+			toast.dismiss(AUDIO_CLEANUP_PROGRESS_TOAST_ID);
+			setCleanupTranscript({ segments, granularity, durationSec });
+			setShowCleanupDialog(true);
+		} catch (e) {
+			console.error(e);
+			toast.dismiss(AUDIO_CLEANUP_PROGRESS_TOAST_ID);
+			toast.error(t("audioCleanup.failed"), {
+				description: e instanceof Error ? e.message : String(e),
+			});
+		} finally {
+			isCleaningAudioRef.current = false;
+			setIsCleaningAudio(false);
+		}
+	}, [videoPath, trimRegions, t]);
+
+	const applyAudioCleanup = useCallback(() => {
+		if (!cleanupPlan || cleanupPlan.regions.length === 0) return;
+		const removedSec = Math.round(cleanupPlan.removedMs / 100) / 10;
+		pushState((prev) => ({ trimRegions: applyCleanupPlan(prev.trimRegions, cleanupPlan) }));
+		setShowCleanupDialog(false);
+		toast.success(
+			t("audioCleanup.applied", {
+				count: String(cleanupPlan.regions.length),
+				seconds: String(removedSec),
+			}),
+		);
+	}, [cleanupPlan, pushState, t]);
+
 	const handleSaveDiagnostic = useCallback(async () => {
 		const result = await window.electronAPI.saveDiagnostic({
 			error: exportError ?? "Manual diagnostic export",
@@ -2535,6 +2650,89 @@ export default function VideoEditor() {
 							className="px-4 py-2 rounded-md bg-[#34B27B] text-white hover:bg-[#34B27B]/90 text-sm font-medium transition-colors"
 						>
 							{t("newRecording.confirm")}
+						</button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog open={showCleanupDialog} onOpenChange={setShowCleanupDialog}>
+				<DialogContent
+					className="sm:max-w-md"
+					style={{ WebkitAppRegion: "no-drag" } as CSSProperties}
+				>
+					<DialogHeader>
+						<DialogTitle>{t("audioCleanup.dialogTitle")}</DialogTitle>
+						<DialogDescription>{t("audioCleanup.dialogDescription")}</DialogDescription>
+					</DialogHeader>
+
+					<div className="space-y-3 py-2">
+						{cleanupPlan?.fillersUnavailableReason === "phrase-granularity" && (
+							<p className="text-xs text-amber-400/90">{t("audioCleanup.phraseGranularity")}</p>
+						)}
+
+						{cleanupPlan && cleanupPlan.regions.length === 0 ? (
+							<p className="text-sm text-slate-300">{t("audioCleanup.nothingFound")}</p>
+						) : (
+							cleanupPlan && (
+								<div className="space-y-1.5 text-sm text-slate-200">
+									{cleanupPlan.fillerCount > 0 && (
+										<div>
+											{t("audioCleanup.fillersFound", {
+												count: String(cleanupPlan.fillerCount),
+											})}
+										</div>
+									)}
+									{cleanupPlan.silenceCount > 0 && (
+										<div>
+											{t("audioCleanup.silencesFound", {
+												count: String(cleanupPlan.silenceCount),
+											})}
+										</div>
+									)}
+									<div className="text-slate-400">
+										{t("audioCleanup.timeSaved", {
+											seconds: String(Math.round(cleanupPlan.removedMs / 100) / 10),
+											percent: String(Math.round(cleanupPlan.removedFraction * 100)),
+										})}
+									</div>
+									{cleanupPlan.removedFraction > CLEANUP_REVIEW_FRACTION && (
+										<p className="text-xs text-amber-400/90">{t("audioCleanup.reviewWarning")}</p>
+									)}
+								</div>
+							)
+						)}
+
+						<label className="flex items-start gap-2 pt-1 cursor-pointer">
+							<input
+								type="checkbox"
+								checked={cleanupIncludeSilences}
+								onChange={(e) => setCleanupIncludeSilences(e.target.checked)}
+								className="mt-0.5 accent-[#34B27B]"
+							/>
+							<span className="text-sm text-slate-200">
+								{t("audioCleanup.includeSilences")}
+								<span className="block text-xs text-slate-400">
+									{t("audioCleanup.includeSilencesHint")}
+								</span>
+							</span>
+						</label>
+					</div>
+
+					<DialogFooter>
+						<button
+							type="button"
+							onClick={() => setShowCleanupDialog(false)}
+							className="px-4 py-2 rounded-md bg-white/10 text-white hover:bg-white/20 text-sm font-medium transition-colors"
+						>
+							{t("audioCleanup.cancel")}
+						</button>
+						<button
+							type="button"
+							onClick={applyAudioCleanup}
+							disabled={!cleanupPlan || cleanupPlan.regions.length === 0}
+							className="px-4 py-2 rounded-md bg-[#34B27B] text-white hover:bg-[#34B27B]/90 disabled:opacity-40 disabled:cursor-not-allowed text-sm font-medium transition-colors"
+						>
+							{t("audioCleanup.apply")}
 						</button>
 					</DialogFooter>
 				</DialogContent>
@@ -3132,6 +3330,11 @@ export default function VideoEditor() {
 											return;
 										}
 										setShowAutoCaptionsDialog(true);
+									}}
+									cleanUpAudioLabel={t("audioCleanup.button")}
+									isCleaningAudio={isCleaningAudio}
+									onCleanUpAudio={() => {
+										void analyzeAudioCleanup();
 									}}
 								/>
 							</div>

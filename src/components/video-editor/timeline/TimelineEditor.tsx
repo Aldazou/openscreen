@@ -4,6 +4,7 @@ import {
 	Captions,
 	Check,
 	ChevronDown,
+	Eraser,
 	Gauge,
 	MessageSquare,
 	Plus,
@@ -93,6 +94,9 @@ interface TimelineEditorProps {
 	/** Opens the auto-captions flow. When omitted, the captions button is hidden. */
 	onGenerateCaptions?: () => void;
 	isGeneratingCaptions?: boolean;
+	onCleanUpAudio?: () => void;
+	isCleaningAudio?: boolean;
+	cleanUpAudioLabel?: string;
 	/** Localized label for the auto-captions button (lives in the `editor` namespace). */
 	captionsLabel?: string;
 }
@@ -928,6 +932,9 @@ export default function TimelineEditor({
 	onGenerateCaptions,
 	isGeneratingCaptions = false,
 	captionsLabel,
+	onCleanUpAudio,
+	isCleaningAudio = false,
+	cleanUpAudioLabel,
 }: TimelineEditorProps) {
 	const t = useScopedT("timeline");
 	const totalMs = useMemo(() => Math.max(0, Math.round(videoDuration * 1000)), [videoDuration]);
@@ -1570,6 +1577,18 @@ export default function TimelineEditor({
 							title={captionsLabel}
 						>
 							<Captions className="w-4 h-4" />
+						</Button>
+					)}
+					{onCleanUpAudio && (
+						<Button
+							onClick={onCleanUpAudio}
+							disabled={isCleaningAudio || !videoUrl}
+							variant="ghost"
+							size="icon"
+							className="h-7 w-7 rounded-lg text-slate-400 hover:text-[#a78bfa] hover:bg-[#a78bfa]/10 transition-all"
+							title={cleanUpAudioLabel}
+						>
+							<Eraser className="w-4 h-4" />
 						</Button>
 					)}
 				</div>
