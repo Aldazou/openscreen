@@ -77,10 +77,14 @@ function renderArrow(
 
 	ctx.translate(offsetX, offsetY);
 
+	// Mirrors the preview's <feDropShadow dx="0" dy="2" stdDeviation="4" floodOpacity="0.3"/>
+	// in ArrowSvgs.tsx. Note the blur is NOT a 1:1 copy of stdDeviation: Canvas2D defines
+	// shadowBlur as *twice* the Gaussian standard deviation, so 8 is the correct match for
+	// stdDeviation="4". Don't "fix" it to 4 — that would halve the softness versus the editor.
 	ctx.shadowColor = "rgba(0, 0, 0, 0.3)";
 	ctx.shadowBlur = 8 * scale;
 	ctx.shadowOffsetX = 0;
-	ctx.shadowOffsetY = 4 * scale;
+	ctx.shadowOffsetY = 2 * scale;
 
 	ctx.strokeStyle = color;
 	ctx.lineWidth = strokeWidth * scale;
