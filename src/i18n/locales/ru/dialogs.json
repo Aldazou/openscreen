@@ -21,7 +21,13 @@
 		"format": "Формат",
 		"frames": "Кадры",
 		"cancelExport": "Отменить экспорт",
-		"savedSuccessfully": "{{format}} успешно сохранён!"
+		"savedSuccessfully": "{{format}} успешно сохранён!",
+		"copied": "Скопировано",
+		"copyFailed": "Не удалось скопировать путь",
+		"copyPath": "Копировать путь",
+		"share": "Поделиться",
+		"shareFailed": "Не удалось открыть меню «Поделиться»",
+		"shareUnavailable": "На этой платформе функция «Поделиться» недоступна"
 	},
 	"tutorial": {
 		"triggerLabel": "Как работает обрезка",
@@ -59,7 +65,9 @@
 		"discardAndLoadProject": "Отменить и загрузить проект",
 		"loadProject": "Загрузить проект…",
 		"saveProject": "Сохранить проект…",
-		"saveProjectAs": "Сохранить проект как…"
+		"saveProjectAs": "Сохранить проект как…",
+		"importVideo": "Импортировать видеофайл…",
+		"newProject": "Новый проект"
 	},
 	"fileDialogs": {
 		"saveGif": "Сохранить экспортированный GIF",

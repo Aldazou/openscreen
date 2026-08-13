@@ -8,7 +8,8 @@
 			"title": "Odak Modu",
 			"manual": "Manuel",
 			"auto": "Otomatik",
-			"autoDescription": "Kamera kaydedilen imleç konumunu takip eder"
+			"autoDescription": "Kamera kaydedilen imleç konumunu takip eder",
+			"lockedDisclaimer": "Zaman çizelgesindeki genel otomatik odak anahtarıyla denetlenir. Yakınlaştırma başına odak modu ayarlamak için kapatın."
 		},
 		"threeD": {
 			"title": "3D Döndürme",
@@ -132,8 +133,6 @@
 		"textPlaceholder": "Metninizi girin...",
 		"fontStyle": "Yazı Tipi Stili",
 		"selectStyle": "Stil seçin",
-		"textAnimation": "Metin Animasyonu",
-		"selectAnimation": "Animasyon seçin",
 		"size": "Boyut",
 		"customFonts": "Özel Yazı Tipleri",
 		"textColor": "Metin Rengi",
@@ -207,7 +206,12 @@
 		"smoothing": "Yumuşatma",
 		"motionBlur": "Hareket Bulanıklığı",
 		"clickBounce": "Tıklama Sıçraması",
-		"clipToBounds": "Tuvale Kırp"
+		"clipToBounds": "Tuvale Kırp",
+		"title": "İmleç",
+		"clipToBoundsDescription": "İmleci video karesi içinde tutar. Kenarların dışına taşmasına izin vermek için kapatın — yakınlaştırma veya kaydırmada kullanışlıdır.",
+		"linuxUnavailable": "Linux'ta yalnızca imleç konumu yakalanır (otomatik yakınlaştırma için). İmleç temaları, tıklama efektleri ve düzenlenebilir katman için macOS/Windows yerel kaydedicisi gerekir.",
+		"noCursorData": "Bu kayıtta düzenlenebilir imleç verisi yok. Temaları ve tıklama efektlerini özelleştirmek için macOS veya Windows'ta düzenlenebilir imleç moduyla kaydedin.",
+		"systemCursorRecording": "Bu kayıt, videoya gömülü sistem imlecini kullandı. Burada yeniden biçimlendirmek için kayıttan önce düzenlenebilir imleç moduna geçin."
 	},
 	"language": {
 		"title": "Dil"
@@ -215,5 +219,16 @@
 	"timeline": {
 		"title": "Zaman Tüneli",
 		"waveform": "Kırpma Parçasında Ses Dalgasını Göster"
+	},
+	"textAnimation": {
+		"title": "Metin animasyonu",
+		"selectAnimation": "Animasyon seç",
+		"none": "Yok",
+		"fade": "Solma",
+		"pop": "Pop",
+		"pulse": "Nabız",
+		"rise": "Yükselme",
+		"slideLeft": "Sola kaydır",
+		"typewriter": "Daktilo"
 	}
 }

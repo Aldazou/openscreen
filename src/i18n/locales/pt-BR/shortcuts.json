@@ -21,7 +21,8 @@
 		"addBlur": "Adicionar Desfoque",
 		"addKeyframe": "Adicionar Quadro-chave",
 		"deleteSelected": "Excluir Selecionado",
-		"playPause": "Reproduzir / Pausar"
+		"playPause": "Reproduzir / Pausar",
+		"openApp": "Abrir aplicativo"
 	},
 	"fixedActions": {
 		"undo": "Desfazer",
@@ -33,5 +34,6 @@
 		"zoomTimeline": "Zoom na Linha do Tempo",
 		"frameBack": "Quadro Anterior",
 		"frameForward": "Próximo Quadro"
-	}
+	},
+	"registrationFailed": "Não foi possível registrar o atalho. Ele pode estar em uso por outro aplicativo. Tente outra tecla."
 }

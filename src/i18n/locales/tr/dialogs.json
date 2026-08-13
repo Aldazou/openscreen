@@ -21,7 +21,13 @@
 		"format": "Biçim",
 		"frames": "Kareler",
 		"cancelExport": "Dışa Aktarımı İptal Et",
-		"savedSuccessfully": "{{format}} başarıyla kaydedildi!"
+		"savedSuccessfully": "{{format}} başarıyla kaydedildi!",
+		"copied": "Kopyalandı",
+		"copyFailed": "Yol kopyalanamadı",
+		"copyPath": "Yolu kopyala",
+		"share": "Paylaş",
+		"shareFailed": "Paylaşım sayfası açılamadı",
+		"shareUnavailable": "Bu platformda paylaşım kullanılamıyor"
 	},
 	"tutorial": {
 		"triggerLabel": "Kırpma nasıl çalışır",
@@ -59,7 +65,9 @@
 		"discardAndLoadProject": "Kaydetmeden Proje Yükle",
 		"loadProject": "Proje Yükle…",
 		"saveProject": "Proje Kaydet…",
-		"saveProjectAs": "Farklı Kaydet…"
+		"saveProjectAs": "Farklı Kaydet…",
+		"importVideo": "Video dosyası içe aktar…",
+		"newProject": "Yeni proje"
 	},
 	"fileDialogs": {
 		"saveGif": "Dışa Aktarılan GIF'i Kaydet",

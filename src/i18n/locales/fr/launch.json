@@ -9,7 +9,12 @@
 		"openVideoFile": "Ouvrir un fichier vidéo",
 		"openProject": "Ouvrir un projet",
 		"useVerticalTray": "Utiliser la barre verticale",
-		"useHorizontalTray": "Utiliser la barre horizontale"
+		"useHorizontalTray": "Utiliser la barre horizontale",
+		"countdownOff": "Compte à rebours : désactivé (cliquez pour 3 s)",
+		"countdownOn": "Compte à rebours : 3 s (cliquez pour désactiver)",
+		"markMoment": "Marquer ce moment (ajoute un zoom lors du montage)",
+		"markMomentCount": "Marquer ce moment ({{count}} marqués)",
+		"openStudio": "Ouvrir Studio"
 	},
 	"audio": {
 		"enableSystemAudio": "Activer l'audio système",
@@ -34,10 +39,18 @@
 		"loading": "Chargement des sources...",
 		"screens": "Écrans ({{count}})",
 		"windows": "Fenêtres ({{count}})",
-		"defaultSourceName": "Écran"
+		"defaultSourceName": "Écran",
+		"recordRegion": "Enregistrer une zone",
+		"emptyTitle": "Aucun écran ni fenêtre trouvé",
+		"emptyDescription": "Si vous venez d'accorder l'autorisation d'enregistrement d'écran, rechargez ce sélecteur. Sous macOS, vous devrez peut-être rouvrir OpenScreen.",
+		"loadFailedDescription": "OpenScreen n'a pas pu charger les sources de capture. Rechargez ce sélecteur et réessayez."
 	},
 	"recording": {
-		"selectSource": "Veuillez sélectionner une source à enregistrer"
+		"selectSource": "Veuillez sélectionner une source à enregistrer",
+		"permissionOpenSettings": "Ouvrir les réglages d'enregistrement d'écran",
+		"permissionRequired": "L'autorisation d'enregistrement d'écran est requise. Activez OpenScreen (ou Electron) dans les Réglages système, puis relancez.",
+		"sourceReady": "Prêt à enregistrer {{name}}",
+		"sourcesUnavailable": "Aucun écran à enregistrer n'a été trouvé. Vérifiez l'autorisation d'enregistrement d'écran et réessayez."
 	},
 	"language": "Langue",
 	"systemLanguagePrompt": {
@@ -45,5 +58,20 @@
 		"description": "Nous avons détecté {{language}} comme langue système. Voulez-vous passer OpenScreen en {{language}} ?",
 		"switch": "Passer en {{language}}",
 		"keepDefault": "Conserver la langue actuelle"
+	},
+	"hud": {
+		"markLabel": "Repère",
+		"modeRegion": "Zone",
+		"modeScreen": "Écran",
+		"modeWindow": "Fenêtre",
+		"regionBadge": "Zone"
+	},
+	"recordingDone": {
+		"title": "Enregistrement prêt",
+		"description": "Ouvrez-le dans Studio pour le monter, ou enregistrez une autre prise.",
+		"openStudio": "Ouvrir dans Studio",
+		"recordAgain": "Enregistrer à nouveau",
+		"marksChip": "{{count}} repères",
+		"regionChip": "Recadrage de zone"
 	}
 }

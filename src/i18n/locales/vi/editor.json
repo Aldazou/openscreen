@@ -76,6 +76,40 @@
 			"unsupportedFormatMessage": "Chỉ có thể thả các tệp dự án .openscreen vào đây. Để nhập video, hãy sử dụng nút \"Nhập tệp video...\" thay thế.",
 			"couldNotOpenTitle": "Không thể mở tệp",
 			"couldNotOpenMessage": "Không thể mở tệp dự án. Video mà nó tham chiếu có thể đã bị di chuyển hoặc xóa."
-		}
+		},
+		"recordButton": "Ghi",
+		"recordRegionButton": "Ghi vùng",
+		"highlights": "Ghi theo vùng · Làm mờ riêng tư · Tạm dừng để đánh dấu · Gần đây",
+		"recentLabel": "Gần đây",
+		"recentProjects": "Dự án gần đây",
+		"recentRecordings": "Bản ghi gần đây",
+		"recentProjectKind": "Dự án",
+		"recentRecordingKind": "Bản ghi"
+	},
+	"audioCleanup": {
+		"button": "Dọn dẹp âm thanh",
+		"dialogTitle": "Dọn dẹp âm thanh",
+		"dialogDescription": "Xem lại những gì sẽ bị xóa. Không có gì bị cắt cho đến khi bạn áp dụng.",
+		"analyzing": "Đang tìm từ đệm…",
+		"loadingModel": "Đang tải mô hình giọng nói (lần đầu tải ~75 MB)…",
+		"transcribing": "Đang chuyển lời nói thành văn bản…",
+		"busy": "Việc dọn dẹp âm thanh đang được thực hiện.",
+		"failed": "Không thể phân tích âm thanh",
+		"noAudio": "Bản ghi này không có giọng nói nghe được để dọn dẹp.",
+		"nothingFound": "Không tìm thấy từ đệm hay khoảng lặng — bản thu này đã sạch.",
+		"fillersFound": "{{count}} từ đệm",
+		"silencesFound": "{{count}} khoảng lặng dài",
+		"timeSaved": "Xóa {{seconds}} giây ({{percent}}% bản thu)",
+		"includeSilences": "Đồng thời rút ngắn khoảng lặng dài",
+		"includeSilencesHint": "Rút các khoảng trống trên 0,7 giây xuống 0,2 giây. Thay đổi nhịp của toàn bộ bản thu.",
+		"phraseGranularity": "Phát hiện từ đệm cần mốc thời gian theo từng từ, bản chép này không có. Chỉ có thể rút ngắn khoảng lặng.",
+		"reviewWarning": "Thao tác này sẽ xóa hơn một nửa bản ghi. Hãy kiểm tra dòng thời gian trước khi áp dụng.",
+		"apply": "Áp dụng cắt",
+		"cancel": "Hủy",
+		"applied": "Đã xóa {{count}} đoạn — ngắn hơn {{seconds}} giây"
+	},
+	"whatsNew": {
+		"title": "Công cụ ghi và hoàn thiện mới",
+		"body": "Ghi theo vùng · Làm mờ riêng tư trên dòng thời gian · Thu phóng tạm dừng→đánh dấu · Bảng chia sẻ khi xuất"
 	}
 }

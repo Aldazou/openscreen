@@ -21,7 +21,13 @@
 		"format": "格式",
 		"frames": "影格",
 		"cancelExport": "取消匯出",
-		"savedSuccessfully": "{{format}} 儲存成功！"
+		"savedSuccessfully": "{{format}} 儲存成功！",
+		"copied": "已複製",
+		"copyFailed": "無法複製路徑",
+		"copyPath": "複製路徑",
+		"share": "分享",
+		"shareFailed": "無法開啟分享面板",
+		"shareUnavailable": "此平台不支援分享"
 	},
 	"tutorial": {
 		"triggerLabel": "剪輯功能說明",
@@ -59,7 +65,9 @@
 		"discardAndLoadProject": "捨棄並載入專案",
 		"loadProject": "載入專案…",
 		"saveProject": "儲存專案…",
-		"saveProjectAs": "專案另存新檔…"
+		"saveProjectAs": "專案另存新檔…",
+		"importVideo": "匯入影片檔…",
+		"newProject": "新增專案"
 	},
 	"fileDialogs": {
 		"saveGif": "儲存匯出的 GIF",

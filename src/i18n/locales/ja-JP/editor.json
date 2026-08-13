@@ -76,6 +76,40 @@
 			"unsupportedFormatMessage": "ここにドロップできるのは .openscreen プロジェクトファイルのみです。動画をインポートするには「動画ファイルをインポート...」ボタンをご使用ください。",
 			"couldNotOpenTitle": "ファイルを開けませんでした",
 			"couldNotOpenMessage": "プロジェクトファイルを開けませんでした。参照している動画が移動または削除された可能性があります。"
-		}
+		},
+		"recordButton": "録画",
+		"recordRegionButton": "範囲を録画",
+		"highlights": "範囲キャプチャ · プライバシーぼかし · 一時停止でマーク · 最近の項目",
+		"recentLabel": "最近",
+		"recentProjects": "最近のプロジェクト",
+		"recentRecordings": "最近の録画",
+		"recentProjectKind": "プロジェクト",
+		"recentRecordingKind": "録画"
+	},
+	"audioCleanup": {
+		"button": "音声をクリーンアップ",
+		"dialogTitle": "音声をクリーンアップ",
+		"dialogDescription": "削除される内容を確認してください。適用するまで何もカットされません。",
+		"analyzing": "フィラーワードを検出しています…",
+		"loadingModel": "音声モデルを読み込んでいます（初回は約 75 MB をダウンロード）…",
+		"transcribing": "音声を文字起こししています…",
+		"busy": "音声のクリーンアップはすでに実行中です。",
+		"failed": "音声を解析できませんでした",
+		"noAudio": "この録画にはクリーンアップできる音声がありません。",
+		"nothingFound": "フィラーワードも無音も見つかりません — このテイクはすでにクリーンです。",
+		"fillersFound": "フィラーワード {{count}} 件",
+		"silencesFound": "長い沈黙 {{count}} 件",
+		"timeSaved": "{{seconds}} 秒を削除（テイクの {{percent}}%）",
+		"includeSilences": "長い沈黙も短縮する",
+		"includeSilencesHint": "0.7 秒を超える間を 0.2 秒に縮めます。テイク全体のテンポが変わります。",
+		"phraseGranularity": "フィラーワードの検出には単語単位のタイミングが必要ですが、この文字起こしにはありません。沈黙の短縮のみ利用できます。",
+		"reviewWarning": "録画の半分以上が削除されます。適用する前にタイムラインを確認してください。",
+		"apply": "カットを適用",
+		"cancel": "キャンセル",
+		"applied": "{{count}} 箇所を削除しました — {{seconds}} 秒短縮"
+	},
+	"whatsNew": {
+		"title": "新しいキャプチャ＆仕上げツール",
+		"body": "範囲録画 · タイムライン上のプライバシーぼかし · 一時停止→マークのズーム · 書き出し時の共有シート"
 	}
 }

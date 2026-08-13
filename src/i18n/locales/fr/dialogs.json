@@ -21,7 +21,13 @@
 		"format": "Format",
 		"frames": "Images",
 		"cancelExport": "Annuler l'export",
-		"savedSuccessfully": "{{format}} enregistré avec succès !"
+		"savedSuccessfully": "{{format}} enregistré avec succès !",
+		"copied": "Copié",
+		"copyFailed": "Impossible de copier le chemin",
+		"copyPath": "Copier le chemin",
+		"share": "Partager",
+		"shareFailed": "Impossible d'ouvrir le menu de partage",
+		"shareUnavailable": "Le partage n'est pas disponible sur cette plateforme"
 	},
 	"tutorial": {
 		"triggerLabel": "Comment fonctionne la coupe",
@@ -59,7 +65,9 @@
 		"discardAndLoadProject": "Ignorer et charger un projet",
 		"loadProject": "Charger un projet…",
 		"saveProject": "Enregistrer le projet…",
-		"saveProjectAs": "Enregistrer le projet sous…"
+		"saveProjectAs": "Enregistrer le projet sous…",
+		"importVideo": "Importer un fichier vidéo…",
+		"newProject": "Nouveau projet"
 	},
 	"fileDialogs": {
 		"saveGif": "Enregistrer le GIF exporté",

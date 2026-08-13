@@ -9,7 +9,12 @@
 		"openVideoFile": "Abrir archivo de video",
 		"openProject": "Abrir proyecto",
 		"useVerticalTray": "Usar bandeja vertical",
-		"useHorizontalTray": "Usar bandeja horizontal"
+		"useHorizontalTray": "Usar bandeja horizontal",
+		"countdownOff": "Cuenta atrás: desactivada (haz clic para 3 s)",
+		"countdownOn": "Cuenta atrás: 3 s (haz clic para desactivar)",
+		"markMoment": "Marca este momento (añade un zoom al editar)",
+		"markMomentCount": "Marca este momento ({{count}} marcados)",
+		"openStudio": "Abrir Studio"
 	},
 	"audio": {
 		"enableSystemAudio": "Activar audio del sistema",
@@ -34,10 +39,18 @@
 		"loading": "Cargando fuentes...",
 		"screens": "Pantallas ({{count}})",
 		"windows": "Ventanas ({{count}})",
-		"defaultSourceName": "Pantalla"
+		"defaultSourceName": "Pantalla",
+		"recordRegion": "Grabar región",
+		"emptyTitle": "No se han encontrado pantallas ni ventanas",
+		"emptyDescription": "Si acabas de conceder el permiso de grabación de pantalla, recarga este selector. En macOS puede que tengas que volver a abrir OpenScreen.",
+		"loadFailedDescription": "OpenScreen no ha podido cargar las fuentes de captura. Recarga este selector e inténtalo de nuevo."
 	},
 	"recording": {
-		"selectSource": "Por favor selecciona una fuente para grabar"
+		"selectSource": "Por favor selecciona una fuente para grabar",
+		"permissionOpenSettings": "Abrir ajustes de grabación de pantalla",
+		"permissionRequired": "Se requiere permiso de grabación de pantalla. Activa OpenScreen (o Electron) en Ajustes del sistema y reinicia la app.",
+		"sourceReady": "Listo para grabar {{name}}",
+		"sourcesUnavailable": "No se ha encontrado ninguna pantalla que grabar. Comprueba el permiso de grabación de pantalla e inténtalo de nuevo."
 	},
 	"language": "Idioma",
 	"systemLanguagePrompt": {
@@ -45,5 +58,20 @@
 		"description": "Detectamos {{language}} como idioma de tu sistema. ¿Quieres cambiar OpenScreen a {{language}}?",
 		"switch": "Cambiar a {{language}}",
 		"keepDefault": "Mantener idioma actual"
+	},
+	"hud": {
+		"markLabel": "Marcar",
+		"modeRegion": "Región",
+		"modeScreen": "Pantalla",
+		"modeWindow": "Ventana",
+		"regionBadge": "Región"
+	},
+	"recordingDone": {
+		"title": "Grabación lista",
+		"description": "Ábrela en Studio para editarla o graba otra toma.",
+		"openStudio": "Abrir en Studio",
+		"recordAgain": "Grabar de nuevo",
+		"marksChip": "{{count}} marcas",
+		"regionChip": "Recorte de región"
 	}
 }

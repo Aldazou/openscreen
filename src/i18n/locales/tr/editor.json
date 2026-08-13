@@ -76,6 +76,40 @@
 			"unsupportedFormatMessage": "Buraya yalnızca .openscreen proje dosyaları bırakılabilir. Video içe aktarmak için \"Video Dosyası İçe Aktar...\" düğmesini kullanın.",
 			"couldNotOpenTitle": "Dosya Açılamadı",
 			"couldNotOpenMessage": "Proje dosyası açılamadı. Başvurulan video taşınmış veya silinmiş olabilir."
-		}
+		},
+		"recordButton": "Kaydet",
+		"recordRegionButton": "Bölgeyi kaydet",
+		"highlights": "Bölge yakalama · Gizlilik bulanıklığı · İşaretlemek için duraklat · Son öğeler",
+		"recentLabel": "Son kullanılanlar",
+		"recentProjects": "Son projeler",
+		"recentRecordings": "Son kayıtlar",
+		"recentProjectKind": "Proje",
+		"recentRecordingKind": "Kayıt"
+	},
+	"audioCleanup": {
+		"button": "Sesi temizle",
+		"dialogTitle": "Sesi temizle",
+		"dialogDescription": "Nelerin kaldırılacağını gözden geçirin. Siz uygulayana kadar hiçbir şey kesilmez.",
+		"analyzing": "Dolgu sözcükleri aranıyor…",
+		"loadingModel": "Konuşma modeli yükleniyor (ilk kullanımda ~75 MB indirilir)…",
+		"transcribing": "Konuşma yazıya dökülüyor…",
+		"busy": "Ses temizleme zaten sürüyor.",
+		"failed": "Ses analiz edilemedi",
+		"noAudio": "Bu kayıtta temizlenecek duyulabilir konuşma yok.",
+		"nothingFound": "Dolgu sözcüğü veya sessizlik bulunamadı — bu çekim zaten temiz.",
+		"fillersFound": "{{count}} dolgu sözcüğü",
+		"silencesFound": "{{count}} uzun duraklama",
+		"timeSaved": "{{seconds}} sn kaldırır (çekimin %{{percent}} kadarı)",
+		"includeSilences": "Uzun duraklamaları da kısalt",
+		"includeSilencesHint": "0,7 sn'yi aşan boşlukları 0,2 sn'ye indirir. Çekimin tamamındaki tempoyu değiştirir.",
+		"phraseGranularity": "Dolgu sözcüğü tespiti sözcük düzeyinde zamanlama gerektirir; bu dökümde yok. Yalnızca duraklama kısaltma kullanılabilir.",
+		"reviewWarning": "Bu, kaydın yarısından fazlasını kaldırır. Uygulamadan önce zaman çizelgesini kontrol edin.",
+		"apply": "Kesmeleri uygula",
+		"cancel": "İptal",
+		"applied": "{{count}} bölüm kaldırıldı — {{seconds}} sn kısaldı"
+	},
+	"whatsNew": {
+		"title": "Yeni yakalama ve tamamlama araçları",
+		"body": "Bölge kaydı · Zaman çizelgesinde gizlilik bulanıklığı · Duraklat→işaretle yakınlaştırmaları · Dışa aktarımda paylaşım sayfası"
 	}
 }

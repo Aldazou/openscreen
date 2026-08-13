@@ -9,7 +9,12 @@
 		"openVideoFile": "فتح ملف فيديو",
 		"openProject": "فتح مشروع",
 		"useVerticalTray": "استخدام الشريط العمودي",
-		"useHorizontalTray": "استخدام الشريط الأفقي"
+		"useHorizontalTray": "استخدام الشريط الأفقي",
+		"countdownOff": "العد التنازلي: مُعطّل (انقر لـ3 ثوانٍ)",
+		"countdownOn": "العد التنازلي: 3 ثوانٍ (انقر لتعطيله)",
+		"markMoment": "علّم هذه اللحظة (يضيف تكبيرًا عند التحرير)",
+		"markMomentCount": "علّم هذه اللحظة ({{count}} معلّمة)",
+		"openStudio": "فتح الاستوديو"
 	},
 	"audio": {
 		"enableSystemAudio": "تفعيل صوت النظام",
@@ -30,10 +35,18 @@
 		"loading": "جاري تحميل المصادر...",
 		"screens": "الشاشات ({{count}})",
 		"windows": "النوافذ ({{count}})",
-		"defaultSourceName": "الشاشة"
+		"defaultSourceName": "الشاشة",
+		"recordRegion": "تسجيل منطقة",
+		"emptyTitle": "لم يتم العثور على شاشات أو نوافذ",
+		"emptyDescription": "إذا كنت قد منحت إذن تسجيل الشاشة للتو، أعد تحميل هذا المُحدِّد. على macOS قد تحتاج إلى إعادة فتح OpenScreen.",
+		"loadFailedDescription": "تعذّر على OpenScreen تحميل مصادر الالتقاط. أعد تحميل هذا المُحدِّد وحاول مرة أخرى."
 	},
 	"recording": {
-		"selectSource": "يرجى تحديد مصدر للتسجيل"
+		"selectSource": "يرجى تحديد مصدر للتسجيل",
+		"permissionOpenSettings": "فتح إعدادات تسجيل الشاشة",
+		"permissionRequired": "مطلوب إذن تسجيل الشاشة. فعّل OpenScreen (أو Electron) في إعدادات النظام ثم أعد تشغيل التطبيق.",
+		"sourceReady": "جاهز لتسجيل {{name}}",
+		"sourcesUnavailable": "تعذّر العثور على شاشة للتسجيل. تحقق من إذن تسجيل الشاشة وحاول مرة أخرى."
 	},
 	"language": "اللغة",
 	"systemLanguagePrompt": {
@@ -45,5 +58,20 @@
 	"cursor": {
 		"useEditableCursor": "استخدام مؤشر قابل للتحرير",
 		"useSystemCursor": "استخدام مؤشر النظام"
+	},
+	"hud": {
+		"markLabel": "علامة",
+		"modeRegion": "منطقة",
+		"modeScreen": "الشاشة",
+		"modeWindow": "نافذة",
+		"regionBadge": "منطقة"
+	},
+	"recordingDone": {
+		"title": "التسجيل جاهز",
+		"description": "افتحه في الاستوديو للتحرير، أو سجّل لقطة أخرى.",
+		"openStudio": "فتح في الاستوديو",
+		"recordAgain": "تسجيل مرة أخرى",
+		"marksChip": "{{count}} علامة",
+		"regionChip": "اقتصاص منطقة"
 	}
 }

@@ -21,7 +21,13 @@
 		"format": "Định dạng",
 		"frames": "Khung hình",
 		"cancelExport": "Hủy xuất",
-		"savedSuccessfully": "Đã lưu {{format}} thành công!"
+		"savedSuccessfully": "Đã lưu {{format}} thành công!",
+		"copied": "Đã sao chép",
+		"copyFailed": "Không thể sao chép đường dẫn",
+		"copyPath": "Sao chép đường dẫn",
+		"share": "Chia sẻ",
+		"shareFailed": "Không thể mở bảng chia sẻ",
+		"shareUnavailable": "Chia sẻ không khả dụng trên nền tảng này"
 	},
 	"tutorial": {
 		"triggerLabel": "Cách hoạt động của công cụ cắt",
@@ -59,7 +65,9 @@
 		"discardAndLoadProject": "Bỏ qua & Tải dự án",
 		"loadProject": "Tải dự án…",
 		"saveProject": "Lưu dự án…",
-		"saveProjectAs": "Lưu dự án thành…"
+		"saveProjectAs": "Lưu dự án thành…",
+		"importVideo": "Nhập tệp video…",
+		"newProject": "Dự án mới"
 	},
 	"fileDialogs": {
 		"saveGif": "Lưu GIF đã xuất",

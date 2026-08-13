@@ -9,7 +9,12 @@
 		"openVideoFile": "打开视频文件",
 		"openProject": "打开项目",
 		"useVerticalTray": "使用竖向托盘",
-		"useHorizontalTray": "使用横向托盘"
+		"useHorizontalTray": "使用横向托盘",
+		"countdownOff": "倒计时：关闭（点击设为 3 秒）",
+		"countdownOn": "倒计时：3 秒（点击关闭）",
+		"markMoment": "标记此刻（编辑时会添加缩放）",
+		"markMomentCount": "标记此刻（已标记 {{count}} 个）",
+		"openStudio": "打开 Studio"
 	},
 	"audio": {
 		"enableSystemAudio": "启用系统音频",
@@ -34,10 +39,18 @@
 		"loading": "正在加载源...",
 		"screens": "屏幕 ({{count}})",
 		"windows": "窗口 ({{count}})",
-		"defaultSourceName": "屏幕"
+		"defaultSourceName": "屏幕",
+		"recordRegion": "录制区域",
+		"emptyTitle": "未找到屏幕或窗口",
+		"emptyDescription": "如果你刚刚授予了屏幕录制权限，请重新加载此选择器。在 macOS 上可能需要重新打开 OpenScreen。",
+		"loadFailedDescription": "OpenScreen 无法加载捕获源。请重新加载此选择器后重试。"
 	},
 	"recording": {
-		"selectSource": "请选择要录制的源"
+		"selectSource": "请选择要录制的源",
+		"permissionOpenSettings": "打开屏幕录制设置",
+		"permissionRequired": "需要屏幕录制权限。请在系统设置中启用 OpenScreen（或 Electron），然后重新启动。",
+		"sourceReady": "准备录制 {{name}}",
+		"sourcesUnavailable": "找不到可录制的屏幕。请检查屏幕录制权限后重试。"
 	},
 	"language": "语言",
 	"systemLanguagePrompt": {
@@ -45,5 +58,20 @@
 		"description": "我们检测到你的系统语言是{{language}}。是否将 OpenScreen 切换为{{language}}？",
 		"switch": "切换到{{language}}",
 		"keepDefault": "保持当前语言"
+	},
+	"hud": {
+		"markLabel": "标记",
+		"modeRegion": "区域",
+		"modeScreen": "屏幕",
+		"modeWindow": "窗口",
+		"regionBadge": "区域"
+	},
+	"recordingDone": {
+		"title": "录制完成",
+		"description": "在 Studio 中打开以编辑，或再录一段。",
+		"openStudio": "在 Studio 中打开",
+		"recordAgain": "重新录制",
+		"marksChip": "{{count}} 个标记",
+		"regionChip": "区域裁剪"
 	}
 }

@@ -8,7 +8,8 @@
 			"title": "對焦模式",
 			"manual": "手動",
 			"auto": "自動",
-			"autoDescription": "攝影機跟隨錄製時的游標位置"
+			"autoDescription": "攝影機跟隨錄製時的游標位置",
+			"lockedDisclaimer": "由時間軸上的全域自動聚焦開關控制。關閉後可為每個縮放單獨設定聚焦模式。"
 		},
 		"speed": {},
 		"threeD": {
@@ -133,8 +134,6 @@
 		"textPlaceholder": "輸入您的文字...",
 		"fontStyle": "字體樣式",
 		"selectStyle": "選擇樣式",
-		"textAnimation": "文字動畫",
-		"selectAnimation": "選擇動畫",
 		"size": "大小",
 		"customFonts": "自訂字體",
 		"textColor": "文字顏色",
@@ -208,7 +207,12 @@
 		"smoothing": "平滑",
 		"motionBlur": "動態模糊",
 		"clickBounce": "點擊彈跳",
-		"clipToBounds": "裁切至畫布"
+		"clipToBounds": "裁切至畫布",
+		"title": "游標",
+		"clipToBoundsDescription": "將游標保持在畫面內。關閉後游標可超出邊緣 — 在縮放或平移時很有用。",
+		"linuxUnavailable": "在 Linux 上僅擷取游標位置（用於自動縮放）。游標主題、點按效果與可編輯圖層需要 macOS/Windows 的原生錄製器。",
+		"noCursorData": "此錄製沒有可編輯的游標資料。請在 macOS 或 Windows 上使用可編輯游標模式錄製，以自訂主題與點按效果。",
+		"systemCursorRecording": "此錄製使用了燒錄進影片的系統游標。請在錄製前切換到可編輯游標模式，才能在此重新設定樣式。"
 	},
 	"language": {
 		"title": "語言"
@@ -216,5 +220,16 @@
 	"timeline": {
 		"title": "時間軸",
 		"waveform": "在剪輯軌道上顯示音訊波形"
+	},
+	"textAnimation": {
+		"title": "文字動畫",
+		"selectAnimation": "選擇動畫",
+		"none": "無",
+		"fade": "淡入",
+		"pop": "彈出",
+		"pulse": "脈衝",
+		"rise": "上升",
+		"slideLeft": "向左滑入",
+		"typewriter": "打字機"
 	}
 }

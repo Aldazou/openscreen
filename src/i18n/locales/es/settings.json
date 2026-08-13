@@ -8,7 +8,8 @@
 			"title": "Modo de enfoque",
 			"manual": "Manual",
 			"auto": "Auto",
-			"autoDescription": "La cámara sigue la posición del cursor grabado"
+			"autoDescription": "La cámara sigue la posición del cursor grabado",
+			"lockedDisclaimer": "Lo controla el interruptor global de enfoque automático de la línea de tiempo. Desactívalo para definir el modo de enfoque por zoom."
 		},
 		"threeD": {
 			"title": "Rotación 3D",
@@ -216,7 +217,12 @@
 		"smoothing": "Suavizado",
 		"motionBlur": "Desenfoque de movimiento",
 		"clickBounce": "Rebote al clic",
-		"clipToBounds": "Recortar al lienzo"
+		"clipToBounds": "Recortar al lienzo",
+		"title": "Cursor",
+		"clipToBoundsDescription": "Mantiene el cursor dentro del encuadre. Desactívalo para que el cursor pueda salirse de los bordes: útil con zoom o paneo.",
+		"linuxUnavailable": "En Linux solo se captura la posición del cursor (para el zoom automático). Los temas de cursor, los efectos de clic y la capa editable requieren el grabador nativo de macOS o Windows.",
+		"noCursorData": "Esta grabación no tiene datos de cursor editables. Graba con el modo de cursor editable en macOS o Windows para personalizar temas y efectos de clic.",
+		"systemCursorRecording": "Esta grabación usó el cursor del sistema incrustado en el vídeo. Cambia al modo de cursor editable antes de grabar para poder reestilizarlo aquí."
 	},
 	"language": {
 		"title": "Idioma"

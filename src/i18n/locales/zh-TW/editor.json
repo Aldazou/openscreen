@@ -76,6 +76,40 @@
 			"unsupportedFormatMessage": "此處只能拖放 .openscreen 專案檔案。要匯入影片，請使用「匯入影片檔案...」按鈕。",
 			"couldNotOpenTitle": "無法開啟檔案",
 			"couldNotOpenMessage": "無法開啟專案檔案。它所參照的影片可能已被移動或刪除。"
-		}
+		},
+		"recordButton": "錄製",
+		"recordRegionButton": "錄製區域",
+		"highlights": "區域擷取 · 隱私模糊 · 暫停標記 · 最近項目",
+		"recentLabel": "最近",
+		"recentProjects": "最近的專案",
+		"recentRecordings": "最近的錄製",
+		"recentProjectKind": "專案",
+		"recentRecordingKind": "錄製"
+	},
+	"audioCleanup": {
+		"button": "清理音訊",
+		"dialogTitle": "清理音訊",
+		"dialogDescription": "檢視將被移除的內容。在你套用之前不會剪掉任何內容。",
+		"analyzing": "正在偵測口頭禪…",
+		"loadingModel": "正在載入語音模型（首次使用需下載約 75 MB）…",
+		"transcribing": "正在轉寫語音…",
+		"busy": "音訊清理已在進行中。",
+		"failed": "無法分析音訊",
+		"noAudio": "此錄製沒有可清理的語音。",
+		"nothingFound": "未發現口頭禪或靜音片段 — 這段錄製已經很乾淨。",
+		"fillersFound": "{{count}} 個口頭禪",
+		"silencesFound": "{{count}} 處長停頓",
+		"timeSaved": "移除 {{seconds}} 秒（占該錄製的 {{percent}}%）",
+		"includeSilences": "同時縮短長停頓",
+		"includeSilencesHint": "將超過 0.7 秒的間隔壓縮到 0.2 秒。會改變整段錄製的節奏。",
+		"phraseGranularity": "偵測口頭禪需要逐字時間戳，此轉寫不包含。僅可縮短停頓。",
+		"reviewWarning": "這將移除超過一半的錄製內容。請在套用前檢查時間軸。",
+		"apply": "套用剪輯",
+		"cancel": "取消",
+		"applied": "已移除 {{count}} 處 — 縮短 {{seconds}} 秒"
+	},
+	"whatsNew": {
+		"title": "全新的擷取與收尾工具",
+		"body": "區域錄製 · 時間軸隱私模糊 · 暫停→標記縮放 · 匯出分享面板"
 	}
 }

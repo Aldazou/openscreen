@@ -76,6 +76,40 @@
 			"unsupportedFormatMessage": "Solo se pueden soltar aquí archivos de proyecto .openscreen. Para importar un video, usa el botón \"Importar archivo de video...\" en su lugar.",
 			"couldNotOpenTitle": "No se pudo abrir el archivo",
 			"couldNotOpenMessage": "No se pudo abrir el archivo de proyecto. El video al que hace referencia puede haber sido movido o eliminado."
-		}
+		},
+		"recordButton": "Grabar",
+		"recordRegionButton": "Grabar región",
+		"highlights": "Captura de región · Desenfoque de privacidad · Pausar para marcar · Recientes",
+		"recentLabel": "Recientes",
+		"recentProjects": "Proyectos recientes",
+		"recentRecordings": "Grabaciones recientes",
+		"recentProjectKind": "Proyecto",
+		"recentRecordingKind": "Grabación"
+	},
+	"audioCleanup": {
+		"button": "Limpiar audio",
+		"dialogTitle": "Limpiar audio",
+		"dialogDescription": "Revisa lo que se eliminará. No se corta nada hasta que apliques.",
+		"analyzing": "Buscando muletillas…",
+		"loadingModel": "Cargando el modelo de voz (la primera vez descarga ~75 MB)…",
+		"transcribing": "Transcribiendo el audio…",
+		"busy": "La limpieza de audio ya está en curso.",
+		"failed": "No se pudo analizar el audio",
+		"noAudio": "Esta grabación no tiene voz audible que limpiar.",
+		"nothingFound": "No se han encontrado muletillas ni silencios: esta toma ya está limpia.",
+		"fillersFound": "{{count}} muletillas",
+		"silencesFound": "{{count}} pausas largas",
+		"timeSaved": "Elimina {{seconds}} s ({{percent}} % de la toma)",
+		"includeSilences": "Acortar también las pausas largas",
+		"includeSilencesHint": "Reduce los huecos de más de 0,7 s a 0,2 s. Cambia el ritmo de toda la toma.",
+		"phraseGranularity": "La detección de muletillas necesita marcas de tiempo por palabra, que esta transcripción no tiene. Solo está disponible acortar las pausas.",
+		"reviewWarning": "Esto eliminaría más de la mitad de la grabación. Revisa la línea de tiempo antes de aplicar.",
+		"apply": "Aplicar cortes",
+		"cancel": "Cancelar",
+		"applied": "Se han eliminado {{count}} secciones: {{seconds}} s más corto"
+	},
+	"whatsNew": {
+		"title": "Nuevas herramientas de captura y acabado",
+		"body": "Grabación de región · Desenfoque de privacidad en la línea de tiempo · Zooms de pausa→marca · Menú de compartir al exportar"
 	}
 }

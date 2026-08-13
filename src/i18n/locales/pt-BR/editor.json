@@ -40,7 +40,8 @@
 		"cameraDenied": "Acesso à câmera negado. A gravação continuará sem webcam.",
 		"cameraDisconnected": "Webcam desconectada.",
 		"cameraNotFound": "Câmera não encontrada.",
-		"permissionDenied": "Permissão de gravação negada. Por favor, permita a gravação de tela."
+		"permissionDenied": "Permissão de gravação negada. Por favor, permita a gravação de tela.",
+		"accessibilityAllowAndRetry": "Conceda acesso de Acessibilidade ao OpenScreen e pressione gravar novamente para iniciar a contagem regressiva."
 	},
 	"autoCaptions": {
 		"button": "Legendas automáticas",
@@ -60,5 +61,55 @@
 		"noAudio": "Este vídeo não tem áudio utilizável para transcrição.",
 		"failed": "Não foi possível gerar as legendas.",
 		"truncated": "Apenas os primeiros {{minutes}} minutos foram transcritos."
+	},
+	"audioCleanup": {
+		"button": "Limpar áudio",
+		"dialogTitle": "Limpar áudio",
+		"dialogDescription": "Revise o que será removido. Nada é cortado até você aplicar.",
+		"analyzing": "Procurando palavras de preenchimento…",
+		"loadingModel": "Carregando o modelo de fala (o primeiro uso baixa ~75 MB)…",
+		"transcribing": "Transcrevendo a fala…",
+		"busy": "A limpeza de áudio já está em andamento.",
+		"failed": "Não foi possível analisar o áudio",
+		"noAudio": "Esta gravação não tem fala audível para limpar.",
+		"nothingFound": "Nenhuma palavra de preenchimento ou silêncio encontrado — esta gravação já está limpa.",
+		"fillersFound": "{{count}} palavras de preenchimento",
+		"silencesFound": "{{count}} pausas longas",
+		"timeSaved": "Remove {{seconds}} s ({{percent}}% da gravação)",
+		"includeSilences": "Também encurtar pausas longas",
+		"includeSilencesHint": "Reduz intervalos acima de 0,7 s para 0,2 s. Muda o ritmo de toda a gravação.",
+		"phraseGranularity": "A detecção de palavras de preenchimento precisa de tempos por palavra, que esta transcrição não tem. Só o encurtamento de pausas está disponível.",
+		"reviewWarning": "Isso removeria mais da metade da gravação. Verifique a linha do tempo antes de aplicar.",
+		"apply": "Aplicar cortes",
+		"cancel": "Cancelar",
+		"applied": "{{count}} trechos removidos — {{seconds}} s mais curto"
+	},
+	"loadingEditor": "Carregando o editor...",
+	"emptyState": {
+		"title": "Capture. Refine. Publique.",
+		"description": "Grave sua tela, marque momentos e finalize no Studio.",
+		"recordButton": "Gravar",
+		"recordRegionButton": "Gravar região",
+		"importVideoButton": "Importar",
+		"loadProjectButton": "Abrir projeto…",
+		"dragDropHint": "ou arraste e solte aqui um vídeo ou projeto .openscreen",
+		"dropOverlay": "Solte o vídeo ou projeto para abrir",
+		"supportedFormats": "Formatos compatíveis: MP4, MOV, WebM, MKV, AVI, M4V, WMV",
+		"highlights": "Captura de região · Desfoque de privacidade · Pausar para marcar · Recentes",
+		"recentLabel": "Recentes",
+		"recentProjects": "Projetos recentes",
+		"recentRecordings": "Gravações recentes",
+		"recentProjectKind": "Projeto",
+		"recentRecordingKind": "Gravação",
+		"dropErrors": {
+			"couldNotOpenTitle": "Não foi possível abrir o arquivo",
+			"couldNotOpenMessage": "Não foi possível abrir o arquivo. Ele pode ter sido movido ou excluído.",
+			"unsupportedFormatTitle": "Formato não compatível",
+			"unsupportedFormatMessage": "Solte um arquivo de vídeo (MP4, MOV, WebM, …) ou um projeto .openscreen. Você também pode usar os botões acima."
+		}
+	},
+	"whatsNew": {
+		"title": "Novas ferramentas de captura e finalização",
+		"body": "Gravação de região · Desfoque de privacidade na linha do tempo · Zooms de pausa→marca · Folha de compartilhamento na exportação"
 	}
 }

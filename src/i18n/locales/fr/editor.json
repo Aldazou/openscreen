@@ -76,6 +76,40 @@
 			"unsupportedFormatMessage": "Seuls les fichiers .openscreen peuvent être déposés ici. Pour importer une vidéo, utilisez plutôt le bouton \"Importer un fichier vidéo...\".",
 			"couldNotOpenTitle": "Impossible d'ouvrir le fichier",
 			"couldNotOpenMessage": "Le fichier de projet n'a pas pu être ouvert. La vidéo qu'il référence a peut-être été déplacée ou supprimée."
-		}
+		},
+		"recordButton": "Enregistrer",
+		"recordRegionButton": "Enregistrer une zone",
+		"highlights": "Capture de zone · Floutage de confidentialité · Pause pour marquer · Récents",
+		"recentLabel": "Récents",
+		"recentProjects": "Projets récents",
+		"recentRecordings": "Enregistrements récents",
+		"recentProjectKind": "Projet",
+		"recentRecordingKind": "Enregistrement"
+	},
+	"audioCleanup": {
+		"button": "Nettoyer l'audio",
+		"dialogTitle": "Nettoyer l'audio",
+		"dialogDescription": "Vérifiez ce qui sera supprimé. Rien n'est coupé avant que vous appliquiez.",
+		"analyzing": "Recherche des mots de remplissage…",
+		"loadingModel": "Chargement du modèle vocal (premier usage : ~75 Mo à télécharger)…",
+		"transcribing": "Transcription de la parole…",
+		"busy": "Le nettoyage audio est déjà en cours.",
+		"failed": "Impossible d'analyser l'audio",
+		"noAudio": "Cet enregistrement ne contient aucune parole audible à nettoyer.",
+		"nothingFound": "Aucun mot de remplissage ni silence trouvé — cette prise est déjà propre.",
+		"fillersFound": "{{count}} mots de remplissage",
+		"silencesFound": "{{count}} longues pauses",
+		"timeSaved": "Supprime {{seconds}} s ({{percent}} % de la prise)",
+		"includeSilences": "Raccourcir aussi les longues pauses",
+		"includeSilencesHint": "Réduit les silences de plus de 0,7 s à 0,2 s. Modifie le rythme de toute la prise.",
+		"phraseGranularity": "La détection des mots de remplissage nécessite un horodatage par mot, absent de cette transcription. Seul le raccourcissement des pauses est disponible.",
+		"reviewWarning": "Cela supprimerait plus de la moitié de l'enregistrement. Vérifiez la timeline avant d'appliquer.",
+		"apply": "Appliquer les coupes",
+		"cancel": "Annuler",
+		"applied": "{{count}} sections supprimées — {{seconds}} s de moins"
+	},
+	"whatsNew": {
+		"title": "Nouveaux outils de capture et de finition",
+		"body": "Enregistrement de zone · Floutage de confidentialité sur la timeline · Zooms pause→repère · Menu de partage à l'export"
 	}
 }

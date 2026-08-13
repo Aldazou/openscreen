@@ -21,7 +21,13 @@
 		"format": "Formato",
 		"frames": "Cuadros",
 		"cancelExport": "Cancelar exportación",
-		"savedSuccessfully": "¡{{format}} guardado exitosamente!"
+		"savedSuccessfully": "¡{{format}} guardado exitosamente!",
+		"copied": "Copiado",
+		"copyFailed": "No se pudo copiar la ruta",
+		"copyPath": "Copiar ruta",
+		"share": "Compartir",
+		"shareFailed": "No se pudo abrir el menú de compartir",
+		"shareUnavailable": "Compartir no está disponible en esta plataforma"
 	},
 	"tutorial": {
 		"triggerLabel": "Cómo funciona el recorte",
@@ -59,7 +65,9 @@
 		"discardAndLoadProject": "Descartar y cargar proyecto",
 		"loadProject": "Cargar proyecto…",
 		"saveProject": "Guardar proyecto…",
-		"saveProjectAs": "Guardar proyecto como…"
+		"saveProjectAs": "Guardar proyecto como…",
+		"importVideo": "Importar archivo de vídeo…",
+		"newProject": "Nuevo proyecto"
 	},
 	"fileDialogs": {
 		"saveGif": "Guardar GIF exportado",

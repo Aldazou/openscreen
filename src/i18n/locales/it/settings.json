@@ -9,7 +9,8 @@
 			"title": "Modalità messa a fuoco",
 			"manual": "Manuale",
 			"auto": "Automatico",
-			"autoDescription": "La fotocamera segue la posizione del cursore registrato"
+			"autoDescription": "La fotocamera segue la posizione del cursore registrato",
+			"lockedDisclaimer": "Controllato dall'interruttore globale di messa a fuoco automatica nella timeline. Disattivalo per impostare la modalità di messa a fuoco per singolo zoom."
 		},
 		"threeD": {
 			"title": "Rotazione 3D",
@@ -101,7 +102,8 @@
 	},
 	"project": {
 		"save": "Salva progetto",
-		"load": "Carica progetto"
+		"load": "Carica progetto",
+		"new": "Nuovo progetto"
 	},
 	"export": {
 		"videoButton": "Esporta video",
@@ -215,7 +217,12 @@
 		"smoothing": "Smussatura",
 		"motionBlur": "Sfocatura movimento",
 		"clickBounce": "Rimbalzo clic",
-		"clipToBounds": "Ritaglia al canvas"
+		"clipToBounds": "Ritaglia al canvas",
+		"title": "Cursore",
+		"clipToBoundsDescription": "Mantiene il cursore dentro l'inquadratura. Disattiva per lasciarlo uscire dai bordi — utile con zoom o panoramica.",
+		"linuxUnavailable": "Su Linux viene catturata solo la posizione del cursore (per lo zoom automatico). Temi del cursore, effetti di clic e livello modificabile richiedono il registratore nativo macOS/Windows.",
+		"noCursorData": "Nessun dato del cursore modificabile in questa registrazione. Registra con la modalità cursore modificabile su macOS o Windows per personalizzare temi ed effetti di clic.",
+		"systemCursorRecording": "Questa registrazione ha usato il cursore di sistema inciso nel video. Passa alla modalità cursore modificabile prima di registrare per ridefinirne lo stile qui."
 	},
 	"language": {
 		"title": "Lingua"

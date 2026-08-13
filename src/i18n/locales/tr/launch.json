@@ -9,7 +9,12 @@
 		"openVideoFile": "Video dosyası aç",
 		"openProject": "Proje aç",
 		"useVerticalTray": "Dikey araç çubuğunu kullan",
-		"useHorizontalTray": "Yatay araç çubuğunu kullan"
+		"useHorizontalTray": "Yatay araç çubuğunu kullan",
+		"countdownOff": "Geri sayım: kapalı (3 sn için tıklayın)",
+		"countdownOn": "Geri sayım: 3 sn (kapatmak için tıklayın)",
+		"markMoment": "Bu anı işaretle (düzenlerken yakınlaştırma ekler)",
+		"markMomentCount": "Bu anı işaretle ({{count}} işaretlendi)",
+		"openStudio": "Studio'yu aç"
 	},
 	"audio": {
 		"enableSystemAudio": "Sistem sesini etkinleştir",
@@ -34,10 +39,18 @@
 		"loading": "Kaynaklar yükleniyor...",
 		"screens": "Ekranlar ({{count}})",
 		"windows": "Pencereler ({{count}})",
-		"defaultSourceName": "Ekran"
+		"defaultSourceName": "Ekran",
+		"recordRegion": "Bölgeyi kaydet",
+		"emptyTitle": "Ekran veya pencere bulunamadı",
+		"emptyDescription": "Ekran kaydı iznini yeni verdiyseniz bu seçiciyi yeniden yükleyin. macOS'ta OpenScreen'i yeniden açmanız gerekebilir.",
+		"loadFailedDescription": "OpenScreen yakalama kaynaklarını yükleyemedi. Bu seçiciyi yeniden yükleyip tekrar deneyin."
 	},
 	"recording": {
-		"selectSource": "Lütfen kayıt için bir kaynak seçin"
+		"selectSource": "Lütfen kayıt için bir kaynak seçin",
+		"permissionOpenSettings": "Ekran kaydı ayarlarını aç",
+		"permissionRequired": "Ekran kaydı izni gerekiyor. Sistem Ayarları'nda OpenScreen'i (veya Electron'u) etkinleştirip uygulamayı yeniden başlatın.",
+		"sourceReady": "{{name}} kaydetmeye hazır",
+		"sourcesUnavailable": "Kaydedilecek ekran bulunamadı. Ekran kaydı iznini kontrol edip yeniden deneyin."
 	},
 	"language": "Dil",
 	"systemLanguagePrompt": {
@@ -45,5 +58,20 @@
 		"description": "Sistem diliniz {{language}} olarak algılandı. OpenScreen i {{language}} diline geçirmek ister misiniz?",
 		"switch": "{{language}} diline geç",
 		"keepDefault": "Mevcut dili koru"
+	},
+	"hud": {
+		"markLabel": "İşaretle",
+		"modeRegion": "Bölge",
+		"modeScreen": "Ekran",
+		"modeWindow": "Pencere",
+		"regionBadge": "Bölge"
+	},
+	"recordingDone": {
+		"title": "Kayıt hazır",
+		"description": "Düzenlemek için Studio'da açın veya başka bir çekim yapın.",
+		"openStudio": "Studio'da aç",
+		"recordAgain": "Yeniden kaydet",
+		"marksChip": "{{count}} işaret",
+		"regionChip": "Bölge kırpma"
 	}
 }

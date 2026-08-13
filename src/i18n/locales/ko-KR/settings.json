@@ -9,7 +9,8 @@
 			"title": "포커스 모드",
 			"manual": "수동",
 			"auto": "자동",
-			"autoDescription": "녹화된 커서 위치를 따라 카메라가 이동합니다"
+			"autoDescription": "녹화된 커서 위치를 따라 카메라가 이동합니다",
+			"lockedDisclaimer": "타임라인의 전역 자동 초점 토글로 제어됩니다. 확대별로 초점 모드를 설정하려면 끄세요."
 		},
 		"threeD": {
 			"title": "3D 회전",
@@ -216,7 +217,12 @@
 		"smoothing": "부드러움",
 		"motionBlur": "모션 블러",
 		"clickBounce": "클릭 바운스",
-		"clipToBounds": "캔버스에 맞춰 자르기"
+		"clipToBounds": "캔버스에 맞춰 자르기",
+		"title": "커서",
+		"clipToBoundsDescription": "커서를 영상 프레임 안에 유지합니다. 끄면 가장자리를 넘어갈 수 있어 확대하거나 이동할 때 유용합니다.",
+		"linuxUnavailable": "Linux에서는 커서 위치만 캡처됩니다(자동 확대용). 커서 테마, 클릭 효과, 편집 가능한 오버레이에는 macOS/Windows 네이티브 레코더가 필요합니다.",
+		"noCursorData": "이 녹화에는 편집 가능한 커서 데이터가 없습니다. 테마와 클릭 효과를 사용자화하려면 macOS 또는 Windows에서 편집 가능한 커서 모드로 녹화하세요.",
+		"systemCursorRecording": "이 녹화는 영상에 새겨진 시스템 커서를 사용했습니다. 여기서 스타일을 바꾸려면 녹화 전에 편집 가능한 커서 모드로 전환하세요."
 	},
 	"language": {
 		"title": "언어"

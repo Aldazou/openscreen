@@ -7,7 +7,14 @@
 		"pauseRecording": "Pausar gravação",
 		"resumeRecording": "Retomar gravação",
 		"openVideoFile": "Abrir arquivo de vídeo",
-		"openProject": "Abrir projeto"
+		"openProject": "Abrir projeto",
+		"countdownOff": "Contagem regressiva: desativada (clique para 3 s)",
+		"countdownOn": "Contagem regressiva: 3 s (clique para desativar)",
+		"markMoment": "Marcar este momento (adiciona um zoom ao editar)",
+		"markMomentCount": "Marcar este momento ({{count}} marcados)",
+		"openStudio": "Abrir o Studio",
+		"useHorizontalTray": "Usar bandeja horizontal",
+		"useVerticalTray": "Usar bandeja vertical"
 	},
 	"audio": {
 		"enableSystemAudio": "Ativar áudio do sistema",
@@ -32,10 +39,18 @@
 		"loading": "Carregando fontes...",
 		"screens": "Telas ({{count}})",
 		"windows": "Janelas ({{count}})",
-		"defaultSourceName": "Tela"
+		"defaultSourceName": "Tela",
+		"recordRegion": "Gravar região",
+		"emptyTitle": "Nenhuma tela ou janela encontrada",
+		"emptyDescription": "Se você acabou de conceder a permissão de gravação de tela, recarregue este seletor. No macOS pode ser necessário reabrir o OpenScreen.",
+		"loadFailedDescription": "O OpenScreen não conseguiu carregar as fontes de captura. Recarregue este seletor e tente novamente."
 	},
 	"recording": {
-		"selectSource": "Por favor, selecione uma fonte para gravar"
+		"selectSource": "Por favor, selecione uma fonte para gravar",
+		"permissionOpenSettings": "Abrir configurações de gravação de tela",
+		"permissionRequired": "É necessária permissão de gravação de tela. Ative o OpenScreen (ou Electron) nas Configurações do sistema e reinicie.",
+		"sourceReady": "Pronto para gravar {{name}}",
+		"sourcesUnavailable": "Não foi possível encontrar uma tela para gravar. Verifique a permissão de gravação de tela e tente novamente."
 	},
 	"language": "Idioma",
 	"systemLanguagePrompt": {
@@ -43,5 +58,20 @@
 		"description": "Detectamos {{language}} como o idioma do seu sistema. Deseja mudar o OpenScreen para {{language}}?",
 		"switch": "Mudar para {{language}}",
 		"keepDefault": "Manter idioma atual"
+	},
+	"hud": {
+		"markLabel": "Marcar",
+		"modeRegion": "Região",
+		"modeScreen": "Tela",
+		"modeWindow": "Janela",
+		"regionBadge": "Região"
+	},
+	"recordingDone": {
+		"title": "Gravação pronta",
+		"description": "Abra no Studio para editar ou grave outra tomada.",
+		"openStudio": "Abrir no Studio",
+		"recordAgain": "Gravar novamente",
+		"marksChip": "{{count}} marcas",
+		"regionChip": "Corte de região"
 	}
 }

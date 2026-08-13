@@ -21,7 +21,13 @@
 		"format": "Formato",
 		"frames": "Fotogrammi",
 		"cancelExport": "Annulla esportazione",
-		"savedSuccessfully": "{{format}} salvato con successo!"
+		"savedSuccessfully": "{{format}} salvato con successo!",
+		"copied": "Copiato",
+		"copyFailed": "Impossibile copiare il percorso",
+		"copyPath": "Copia percorso",
+		"share": "Condividi",
+		"shareFailed": "Impossibile aprire il pannello di condivisione",
+		"shareUnavailable": "La condivisione non è disponibile su questa piattaforma"
 	},
 	"tutorial": {
 		"triggerLabel": "Come funziona il taglio",
@@ -53,7 +59,15 @@
 		"discardAndClose": "Scarta e chiudi",
 		"loadProject": "Carica progetto…",
 		"saveProject": "Salva progetto…",
-		"saveProjectAs": "Salva progetto come…"
+		"saveProjectAs": "Salva progetto come…",
+		"importVideo": "Importa file video…",
+		"newProject": "Nuovo progetto",
+		"detailLoadProject": "Vuoi salvare il progetto prima di caricarne un altro?",
+		"detailNewProject": "Vuoi salvare il progetto prima di crearne uno nuovo?",
+		"discardAndLoadProject": "Ignora e carica progetto",
+		"discardAndNewProject": "Ignora e nuovo progetto",
+		"saveAndLoadProject": "Salva e carica progetto",
+		"saveAndNewProject": "Salva e nuovo progetto"
 	},
 	"fileDialogs": {
 		"saveGif": "Salva GIF esportata",

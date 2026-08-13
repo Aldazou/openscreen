@@ -9,7 +9,12 @@
 		"openVideoFile": "Открыть видеофайл",
 		"openProject": "Открыть проект",
 		"useVerticalTray": "Использовать вертикальную панель",
-		"useHorizontalTray": "Использовать горизонтальную панель"
+		"useHorizontalTray": "Использовать горизонтальную панель",
+		"countdownOff": "Обратный отсчёт: выкл. (нажмите для 3 с)",
+		"countdownOn": "Обратный отсчёт: 3 с (нажмите, чтобы выключить)",
+		"markMoment": "Отметить момент (при монтаже добавится приближение)",
+		"markMomentCount": "Отметить момент (отмечено: {{count}})",
+		"openStudio": "Открыть Studio"
 	},
 	"audio": {
 		"enableSystemAudio": "Включить системное аудио",
@@ -30,10 +35,18 @@
 		"loading": "Загрузка источников...",
 		"screens": "Экраны ({{count}})",
 		"windows": "Окна ({{count}})",
-		"defaultSourceName": "Экран"
+		"defaultSourceName": "Экран",
+		"recordRegion": "Записать область",
+		"emptyTitle": "Экраны и окна не найдены",
+		"emptyDescription": "Если вы только что выдали разрешение на запись экрана, перезагрузите этот выбор. В macOS может потребоваться заново открыть OpenScreen.",
+		"loadFailedDescription": "OpenScreen не смог загрузить источники захвата. Перезагрузите этот выбор и повторите попытку."
 	},
 	"recording": {
-		"selectSource": "Пожалуйста, выберите источник для записи"
+		"selectSource": "Пожалуйста, выберите источник для записи",
+		"permissionOpenSettings": "Открыть настройки записи экрана",
+		"permissionRequired": "Требуется разрешение на запись экрана. Включите OpenScreen (или Electron) в системных настройках и перезапустите приложение.",
+		"sourceReady": "Готово к записи: {{name}}",
+		"sourcesUnavailable": "Не удалось найти экран для записи. Проверьте разрешение на запись экрана и повторите попытку."
 	},
 	"language": "Язык",
 	"systemLanguagePrompt": {
@@ -45,5 +58,20 @@
 	"cursor": {
 		"useEditableCursor": "Использовать редактируемый курсор",
 		"useSystemCursor": "Использовать системный курсор"
+	},
+	"hud": {
+		"markLabel": "Метка",
+		"modeRegion": "Область",
+		"modeScreen": "Экран",
+		"modeWindow": "Окно",
+		"regionBadge": "Область"
+	},
+	"recordingDone": {
+		"title": "Запись готова",
+		"description": "Откройте в Studio для монтажа или запишите ещё один дубль.",
+		"openStudio": "Открыть в Studio",
+		"recordAgain": "Записать снова",
+		"marksChip": "Меток: {{count}}",
+		"regionChip": "Обрезка области"
 	}
 }

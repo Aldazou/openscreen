@@ -61,5 +61,55 @@
 		"noAudio": "Questo video non contiene audio utilizzabile per la trascrizione.",
 		"failed": "Impossibile generare i sottotitoli.",
 		"truncated": "Sono stati trascritti solo i primi {{minutes}} minuti."
+	},
+	"audioCleanup": {
+		"button": "Pulisci audio",
+		"dialogTitle": "Pulisci audio",
+		"dialogDescription": "Controlla cosa verrà rimosso. Nulla viene tagliato finché non applichi.",
+		"analyzing": "Ricerca di intercalari…",
+		"loadingModel": "Caricamento del modello vocale (al primo utilizzo scarica ~75 MB)…",
+		"transcribing": "Trascrizione del parlato…",
+		"busy": "La pulizia dell'audio è già in corso.",
+		"failed": "Impossibile analizzare l'audio",
+		"noAudio": "Questa registrazione non contiene parlato udibile da pulire.",
+		"nothingFound": "Nessun intercalare o silenzio trovato — questa ripresa è già pulita.",
+		"fillersFound": "{{count}} intercalari",
+		"silencesFound": "{{count}} pause lunghe",
+		"timeSaved": "Rimuove {{seconds}} s ({{percent}}% della ripresa)",
+		"includeSilences": "Accorcia anche le pause lunghe",
+		"includeSilencesHint": "Riduce le pause oltre 0,7 s a 0,2 s. Cambia il ritmo dell'intera ripresa.",
+		"phraseGranularity": "Il rilevamento degli intercalari richiede tempi a livello di parola, assenti in questa trascrizione. È disponibile solo l'accorciamento delle pause.",
+		"reviewWarning": "Verrebbe rimossa più della metà della registrazione. Controlla la timeline prima di applicare.",
+		"apply": "Applica tagli",
+		"cancel": "Annulla",
+		"applied": "Rimosse {{count}} sezioni — {{seconds}} s in meno"
+	},
+	"loadingEditor": "Caricamento dell'editor...",
+	"emptyState": {
+		"title": "Cattura. Rifinisci. Pubblica.",
+		"description": "Registra lo schermo, segna i momenti e rifinisci in Studio.",
+		"recordButton": "Registra",
+		"recordRegionButton": "Registra area",
+		"importVideoButton": "Importa",
+		"loadProjectButton": "Apri progetto…",
+		"dragDropHint": "oppure trascina qui un video o un progetto .openscreen",
+		"dropOverlay": "Rilascia il video o il progetto per aprirlo",
+		"supportedFormats": "Formati supportati: MP4, MOV, WebM, MKV, AVI, M4V, WMV",
+		"highlights": "Cattura area · Sfocatura privacy · Pausa per segnare · Recenti",
+		"recentLabel": "Recenti",
+		"recentProjects": "Progetti recenti",
+		"recentRecordings": "Registrazioni recenti",
+		"recentProjectKind": "Progetto",
+		"recentRecordingKind": "Registrazione",
+		"dropErrors": {
+			"couldNotOpenTitle": "Impossibile aprire il file",
+			"couldNotOpenMessage": "Impossibile aprire il file. Potrebbe essere stato spostato o eliminato.",
+			"unsupportedFormatTitle": "Formato non supportato",
+			"unsupportedFormatMessage": "Rilascia un file video (MP4, MOV, WebM, …) o un progetto .openscreen. Puoi anche usare i pulsanti qui sopra."
+		}
+	},
+	"whatsNew": {
+		"title": "Nuovi strumenti di cattura e rifinitura",
+		"body": "Registrazione area · Sfocatura privacy sulla timeline · Zoom pausa→segno · Pannello di condivisione all'esportazione"
 	}
 }

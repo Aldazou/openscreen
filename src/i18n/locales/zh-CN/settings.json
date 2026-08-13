@@ -8,7 +8,8 @@
 			"title": "对焦模式",
 			"manual": "手动",
 			"auto": "自动",
-			"autoDescription": "摄像头跟随录制时的光标位置"
+			"autoDescription": "摄像头跟随录制时的光标位置",
+			"lockedDisclaimer": "由时间轴上的全局自动聚焦开关控制。关闭后可为每个缩放单独设置聚焦模式。"
 		},
 		"threeD": {
 			"title": "3D 旋转",
@@ -132,8 +133,6 @@
 		"textPlaceholder": "输入您的文本...",
 		"fontStyle": "字体样式",
 		"selectStyle": "选择样式",
-		"textAnimation": "文本动画",
-		"selectAnimation": "选择动画",
 		"size": "大小",
 		"customFonts": "自定义字体",
 		"textColor": "文本颜色",
@@ -207,7 +206,12 @@
 		"smoothing": "平滑",
 		"motionBlur": "运动模糊",
 		"clickBounce": "点击弹跳",
-		"clipToBounds": "裁剪到画布"
+		"clipToBounds": "裁剪到画布",
+		"title": "光标",
+		"clipToBoundsDescription": "将光标保持在画面内。关闭后光标可超出边缘 — 在缩放或平移时很有用。",
+		"linuxUnavailable": "在 Linux 上仅捕获光标位置（用于自动缩放）。光标主题、点击效果和可编辑图层需要 macOS/Windows 的原生录制器。",
+		"noCursorData": "此录制没有可编辑的光标数据。请在 macOS 或 Windows 上使用可编辑光标模式录制，以自定义主题和点击效果。",
+		"systemCursorRecording": "此录制使用了烧录进视频的系统光标。请在录制前切换到可编辑光标模式，才能在此重新设置样式。"
 	},
 	"language": {
 		"title": "语言"
@@ -215,5 +219,16 @@
 	"timeline": {
 		"title": "时间轴",
 		"waveform": "在剪辑轨道上显示音频波形"
+	},
+	"textAnimation": {
+		"title": "文字动画",
+		"selectAnimation": "选择动画",
+		"none": "无",
+		"fade": "淡入",
+		"pop": "弹出",
+		"pulse": "脉冲",
+		"rise": "上升",
+		"slideLeft": "向左滑入",
+		"typewriter": "打字机"
 	}
 }

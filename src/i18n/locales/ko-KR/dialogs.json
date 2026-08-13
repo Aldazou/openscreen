@@ -21,7 +21,13 @@
 		"format": "형식",
 		"frames": "프레임",
 		"cancelExport": "내보내기 취소",
-		"savedSuccessfully": "{{format}} 저장이 완료되었습니다!"
+		"savedSuccessfully": "{{format}} 저장이 완료되었습니다!",
+		"copied": "복사됨",
+		"copyFailed": "경로를 복사하지 못했습니다",
+		"copyPath": "경로 복사",
+		"share": "공유",
+		"shareFailed": "공유 시트를 열지 못했습니다",
+		"shareUnavailable": "이 플랫폼에서는 공유를 사용할 수 없습니다"
 	},
 	"tutorial": {
 		"triggerLabel": "트리밍 사용법",
@@ -59,7 +65,9 @@
 		"discardAndLoadProject": "저장하지 않고 프로젝트 불러오기",
 		"loadProject": "프로젝트 불러오기...",
 		"saveProject": "프로젝트 저장...",
-		"saveProjectAs": "다른 이름으로 프로젝트 저장..."
+		"saveProjectAs": "다른 이름으로 프로젝트 저장...",
+		"importVideo": "동영상 파일 가져오기…",
+		"newProject": "새 프로젝트"
 	},
 	"fileDialogs": {
 		"saveGif": "내보낸 GIF 저장",

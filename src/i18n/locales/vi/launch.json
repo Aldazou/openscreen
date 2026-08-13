@@ -9,7 +9,12 @@
 		"openVideoFile": "Mở tệp video",
 		"openProject": "Mở dự án",
 		"useVerticalTray": "Dùng khay dọc",
-		"useHorizontalTray": "Dùng khay ngang"
+		"useHorizontalTray": "Dùng khay ngang",
+		"countdownOff": "Đếm ngược: tắt (nhấp để chọn 3 giây)",
+		"countdownOn": "Đếm ngược: 3 giây (nhấp để tắt)",
+		"markMoment": "Đánh dấu khoảnh khắc này (thêm thu phóng khi chỉnh sửa)",
+		"markMomentCount": "Đánh dấu khoảnh khắc này (đã đánh dấu {{count}})",
+		"openStudio": "Mở Studio"
 	},
 	"audio": {
 		"enableSystemAudio": "Bật âm thanh hệ thống",
@@ -30,10 +35,18 @@
 		"loading": "Đang tải nguồn...",
 		"screens": "Màn hình ({{count}})",
 		"windows": "Cửa sổ ({{count}})",
-		"defaultSourceName": "Màn hình"
+		"defaultSourceName": "Màn hình",
+		"recordRegion": "Ghi vùng",
+		"emptyTitle": "Không tìm thấy màn hình hoặc cửa sổ",
+		"emptyDescription": "Nếu bạn vừa cấp quyền ghi màn hình, hãy tải lại bộ chọn này. Trên macOS có thể cần mở lại OpenScreen.",
+		"loadFailedDescription": "OpenScreen không tải được nguồn ghi. Hãy tải lại bộ chọn này và thử lại."
 	},
 	"recording": {
-		"selectSource": "Vui lòng chọn một nguồn để ghi"
+		"selectSource": "Vui lòng chọn một nguồn để ghi",
+		"permissionOpenSettings": "Mở cài đặt ghi màn hình",
+		"permissionRequired": "Cần quyền ghi màn hình. Hãy bật OpenScreen (hoặc Electron) trong Cài đặt hệ thống rồi khởi động lại.",
+		"sourceReady": "Sẵn sàng ghi {{name}}",
+		"sourcesUnavailable": "Không tìm thấy màn hình để ghi. Hãy kiểm tra quyền ghi màn hình và thử lại."
 	},
 	"language": "Ngôn ngữ",
 	"systemLanguagePrompt": {
@@ -45,5 +58,20 @@
 	"cursor": {
 		"useEditableCursor": "Dùng con trỏ có thể chỉnh sửa",
 		"useSystemCursor": "Dùng con trỏ hệ thống"
+	},
+	"hud": {
+		"markLabel": "Đánh dấu",
+		"modeRegion": "Vùng",
+		"modeScreen": "Màn hình",
+		"modeWindow": "Cửa sổ",
+		"regionBadge": "Vùng"
+	},
+	"recordingDone": {
+		"title": "Bản ghi đã sẵn sàng",
+		"description": "Mở trong Studio để chỉnh sửa, hoặc ghi thêm một bản khác.",
+		"openStudio": "Mở trong Studio",
+		"recordAgain": "Ghi lại",
+		"marksChip": "{{count}} dấu",
+		"regionChip": "Cắt theo vùng"
 	}
 }

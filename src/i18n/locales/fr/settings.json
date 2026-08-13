@@ -8,7 +8,8 @@
 			"title": "Mode focus",
 			"manual": "Manuel",
 			"auto": "Auto",
-			"autoDescription": "La caméra suit la position du curseur enregistré"
+			"autoDescription": "La caméra suit la position du curseur enregistré",
+			"lockedDisclaimer": "Contrôlé par l'interrupteur global de mise au point auto dans la timeline. Désactivez-le pour définir le mode de mise au point par zoom."
 		},
 		"threeD": {
 			"title": "Rotation 3D",
@@ -216,7 +217,12 @@
 		"smoothing": "Lissage",
 		"motionBlur": "Flou de mouvement",
 		"clickBounce": "Rebond au clic",
-		"clipToBounds": "Rogner au canevas"
+		"clipToBounds": "Rogner au canevas",
+		"title": "Curseur",
+		"clipToBoundsDescription": "Garde le curseur dans le cadre vidéo. Désactivez pour laisser le curseur dépasser les bords — utile en zoom ou en panoramique.",
+		"linuxUnavailable": "Sous Linux, seule la position du curseur est capturée (pour le zoom auto). Les thèmes de curseur, les effets de clic et le calque modifiable nécessitent l'enregistreur natif macOS/Windows.",
+		"noCursorData": "Aucune donnée de curseur modifiable dans cet enregistrement. Enregistrez en mode curseur modifiable sur macOS ou Windows pour personnaliser thèmes et effets de clic.",
+		"systemCursorRecording": "Cet enregistrement utilise le curseur système incrusté dans la vidéo. Passez en mode curseur modifiable avant d'enregistrer pour le restyler ici."
 	},
 	"language": {
 		"title": "Langue"

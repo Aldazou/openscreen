@@ -76,6 +76,40 @@
 			"unsupportedFormatMessage": ".openscreen 프로젝트 파일만 여기에 드롭할 수 있습니다. 동영상을 가져오려면 \"동영상 파일 가져오기...\" 버튼을 사용하세요.",
 			"couldNotOpenTitle": "파일을 열 수 없음",
 			"couldNotOpenMessage": "프로젝트 파일을 열 수 없습니다. 참조된 동영상이 이동되었거나 삭제되었을 수 있습니다."
-		}
+		},
+		"recordButton": "녹화",
+		"recordRegionButton": "영역 녹화",
+		"highlights": "영역 캡처 · 개인정보 블러 · 일시정지로 표시 · 최근 항목",
+		"recentLabel": "최근",
+		"recentProjects": "최근 프로젝트",
+		"recentRecordings": "최근 녹화",
+		"recentProjectKind": "프로젝트",
+		"recentRecordingKind": "녹화"
+	},
+	"audioCleanup": {
+		"button": "오디오 정리",
+		"dialogTitle": "오디오 정리",
+		"dialogDescription": "제거될 내용을 검토하세요. 적용하기 전까지는 아무것도 잘리지 않습니다.",
+		"analyzing": "군말을 찾는 중…",
+		"loadingModel": "음성 모델을 불러오는 중 (처음 사용 시 약 75MB 다운로드)…",
+		"transcribing": "음성을 텍스트로 변환하는 중…",
+		"busy": "오디오 정리가 이미 진행 중입니다.",
+		"failed": "오디오를 분석할 수 없습니다",
+		"noAudio": "이 녹화에는 정리할 음성이 없습니다.",
+		"nothingFound": "군말이나 빈 구간이 없습니다 — 이 테이크는 이미 깔끔합니다.",
+		"fillersFound": "군말 {{count}}개",
+		"silencesFound": "긴 정적 {{count}}개",
+		"timeSaved": "{{seconds}}초 제거 (테이크의 {{percent}}%)",
+		"includeSilences": "긴 정적도 줄이기",
+		"includeSilencesHint": "0.7초가 넘는 간격을 0.2초로 줄입니다. 테이크 전체의 흐름이 바뀝니다.",
+		"phraseGranularity": "군말 감지에는 단어 단위 타이밍이 필요하지만 이 전사에는 없습니다. 정적 줄이기만 사용할 수 있습니다.",
+		"reviewWarning": "녹화의 절반 이상이 제거됩니다. 적용하기 전에 타임라인을 확인하세요.",
+		"apply": "컷 적용",
+		"cancel": "취소",
+		"applied": "{{count}}개 구간 제거 — {{seconds}}초 짧아짐"
+	},
+	"whatsNew": {
+		"title": "새로운 캡처 및 마무리 도구",
+		"body": "영역 녹화 · 타임라인 개인정보 블러 · 일시정지→표시 확대 · 내보내기 공유 시트"
 	}
 }

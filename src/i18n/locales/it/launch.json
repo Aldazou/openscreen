@@ -9,7 +9,12 @@
 		"openVideoFile": "Apri file video",
 		"openProject": "Apri progetto",
 		"useVerticalTray": "Usa barra verticale",
-		"useHorizontalTray": "Usa barra orizzontale"
+		"useHorizontalTray": "Usa barra orizzontale",
+		"countdownOff": "Conto alla rovescia: disattivato (clicca per 3 s)",
+		"countdownOn": "Conto alla rovescia: 3 s (clicca per disattivare)",
+		"markMoment": "Segna questo momento (aggiunge uno zoom in fase di montaggio)",
+		"markMomentCount": "Segna questo momento ({{count}} segnati)",
+		"openStudio": "Apri Studio"
 	},
 	"audio": {
 		"enableSystemAudio": "Abilita audio di sistema",
@@ -34,10 +39,18 @@
 		"loading": "Caricamento sorgenti...",
 		"screens": "Schermi ({{count}})",
 		"windows": "Finestre ({{count}})",
-		"defaultSourceName": "Schermo"
+		"defaultSourceName": "Schermo",
+		"recordRegion": "Registra area",
+		"emptyTitle": "Nessuno schermo o finestra trovata",
+		"emptyDescription": "Se hai appena concesso l'autorizzazione di registrazione schermo, ricarica questo selettore. Su macOS potrebbe essere necessario riaprire OpenScreen.",
+		"loadFailedDescription": "OpenScreen non è riuscito a caricare le sorgenti di acquisizione. Ricarica questo selettore e riprova."
 	},
 	"recording": {
-		"selectSource": "Seleziona una sorgente da registrare"
+		"selectSource": "Seleziona una sorgente da registrare",
+		"permissionOpenSettings": "Apri impostazioni di registrazione schermo",
+		"permissionRequired": "È necessaria l'autorizzazione alla registrazione dello schermo. Abilita OpenScreen (o Electron) in Impostazioni di sistema e riavvia.",
+		"sourceReady": "Pronto a registrare {{name}}",
+		"sourcesUnavailable": "Nessuno schermo da registrare trovato. Controlla l'autorizzazione di registrazione schermo e riprova."
 	},
 	"language": "Lingua",
 	"systemLanguagePrompt": {
@@ -45,5 +58,20 @@
 		"description": "Abbiamo rilevato {{language}} come lingua del sistema. Vuoi passare OpenScreen a {{language}}?",
 		"switch": "Passa a {{language}}",
 		"keepDefault": "Mantieni la lingua corrente"
+	},
+	"hud": {
+		"markLabel": "Segna",
+		"modeRegion": "Area",
+		"modeScreen": "Schermo",
+		"modeWindow": "Finestra",
+		"regionBadge": "Area"
+	},
+	"recordingDone": {
+		"title": "Registrazione pronta",
+		"description": "Aprila in Studio per modificarla, oppure registra un'altra ripresa.",
+		"openStudio": "Apri in Studio",
+		"recordAgain": "Registra di nuovo",
+		"marksChip": "{{count}} segni",
+		"regionChip": "Ritaglio area"
 	}
 }

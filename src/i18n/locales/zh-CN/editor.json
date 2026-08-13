@@ -76,6 +76,40 @@
 			"unsupportedFormatMessage": "此处只能拖放 .openscreen 项目文件。要导入视频，请使用\"导入视频文件...\"按钮。",
 			"couldNotOpenTitle": "无法打开文件",
 			"couldNotOpenMessage": "无法打开项目文件。它引用的视频可能已被移动或删除。"
-		}
+		},
+		"recordButton": "录制",
+		"recordRegionButton": "录制区域",
+		"highlights": "区域捕获 · 隐私模糊 · 暂停标记 · 最近项目",
+		"recentLabel": "最近",
+		"recentProjects": "最近的项目",
+		"recentRecordings": "最近的录制",
+		"recentProjectKind": "项目",
+		"recentRecordingKind": "录制"
+	},
+	"audioCleanup": {
+		"button": "清理音频",
+		"dialogTitle": "清理音频",
+		"dialogDescription": "查看将被移除的内容。在你应用之前不会剪切任何内容。",
+		"analyzing": "正在检测口头禅…",
+		"loadingModel": "正在加载语音模型（首次使用需下载约 75 MB）…",
+		"transcribing": "正在转写语音…",
+		"busy": "音频清理已在进行中。",
+		"failed": "无法分析音频",
+		"noAudio": "此录制没有可清理的语音。",
+		"nothingFound": "未发现口头禅或静音片段 — 这段录制已经很干净。",
+		"fillersFound": "{{count}} 个口头禅",
+		"silencesFound": "{{count}} 处长停顿",
+		"timeSaved": "移除 {{seconds}} 秒（占该录制的 {{percent}}%）",
+		"includeSilences": "同时缩短长停顿",
+		"includeSilencesHint": "将超过 0.7 秒的间隔压缩到 0.2 秒。会改变整段录制的节奏。",
+		"phraseGranularity": "检测口头禅需要逐词时间戳，此转写不包含。仅可缩短停顿。",
+		"reviewWarning": "这将移除超过一半的录制内容。请在应用前检查时间轴。",
+		"apply": "应用剪切",
+		"cancel": "取消",
+		"applied": "已移除 {{count}} 处 — 缩短 {{seconds}} 秒"
+	},
+	"whatsNew": {
+		"title": "全新的捕获与收尾工具",
+		"body": "区域录制 · 时间轴隐私模糊 · 暂停→标记缩放 · 导出分享面板"
 	}
 }
