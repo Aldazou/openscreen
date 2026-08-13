@@ -18,6 +18,7 @@ import type { CursorRecordingData } from "@/native/contracts";
 import { getPlatform } from "@/utils/platformUtils";
 import { clearImageAnnotationCache } from "./animatedImage";
 import { AudioProcessor } from "./audioEncoder";
+import { resolveExportFrameRate } from "./exportFrameRate";
 import { FrameRenderer } from "./frameRenderer";
 import { VideoMuxer } from "./muxer";
 import { StreamingVideoDecoder } from "./streamingDecoder";
@@ -235,6 +236,21 @@ export class VideoExporter {
 			const sourceCopyResult = await this.trySourceCopyFastPath(videoInfo);
 			if (sourceCopyResult) {
 				return sourceCopyResult;
+			}
+
+			// The editor always asks for 60 fps so generated motion (zooms, cursor smoothing,
+			// motion blur) is smooth. With none of that, every extra frame is a duplicate of the
+			// source and only costs encode time, so fall back to the source's own rate.
+			const effectiveFrameRate = resolveExportFrameRate(
+				this.config.frameRate,
+				videoInfo.frameRate,
+				this.config,
+			);
+			if (effectiveFrameRate !== this.config.frameRate) {
+				console.info(
+					`[VideoExporter] no generated motion — exporting at source ${effectiveFrameRate} fps instead of ${this.config.frameRate}`,
+				);
+				this.config = { ...this.config, frameRate: effectiveFrameRate };
 			}
 
 			let webcamInfo: Awaited<ReturnType<StreamingVideoDecoder["loadMetadata"]>> | null = null;
